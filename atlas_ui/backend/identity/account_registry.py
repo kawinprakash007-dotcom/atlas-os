@@ -70,3 +70,8 @@ class AccountRegistry:
 
     def list_accounts(self) -> List[Account]:
         return [copy.deepcopy(acc) for acc in self._accounts.values()]
+
+    def remove_account(self, account_id: str) -> None:
+        if account_id not in self._accounts:
+            raise KeyError(f"Account '{account_id}' does not exist.")
+        self._accounts.pop(account_id)

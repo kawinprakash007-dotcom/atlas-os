@@ -282,18 +282,35 @@ export function renderUserManagement(containerId, sessionId, onRefreshDashboard)
                         <span class="status-badge ${riskClass}" title="${riskTooltip}">${riskLevel}</span>
                     </td>
                     <td style="padding: 15px 10px;">
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn-secondary btn-sm" onclick="window.viewUserDetails('${u.atlas_person_id}')" title="View Details">
-                                <i class="fas fa-eye"></i>
+                        <div style="position: relative;">
+                            <button class="btn-secondary btn-sm dropdown-btn" onclick="window.toggleUserDropdown('${u.account_id}')" style="width: 100px;">
+                                ACTIONS ▼
                             </button>
-                            <button class="btn-secondary btn-sm" onclick="window.toggleUserStatus('${u.account_id}', ${!u.enabled})" title="${u.enabled ? 'Disable Account' : 'Enable Account'}">
-                                <i class="fas ${u.enabled ? 'fa-user-slash' : 'fa-user-check'}"></i>
-                            </button>
-                            ${u.atlas_person_id ? `
-                            <button class="btn-primary btn-sm" onclick="window.enrollUserFace('${u.atlas_person_id}')" title="Enroll Face">
-                                <i class="fas fa-camera"></i> Enroll
-                            </button>
-                            ` : ''}
+                            <div id="dropdown-${u.account_id}" class="action-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 200px; text-align: left; padding: 5px 0;">
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.viewUserDetails('${u.atlas_person_id}'); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas fa-eye" style="width: 20px; text-align: center; margin-right: 5px;"></i> View Details
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.openEditUserModal('${u.account_id}', '${u.atlas_person_id}', '${u.username.replace(/'/g, "\\'")}', '${(u.display_name||'').replace(/'/g, "\\'")}', '${u.role}', ${u.enabled}); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas fa-edit" style="width: 20px; text-align: center; margin-right: 5px;"></i> Edit User
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.openChangePasswordModal('${u.account_id}', '${u.username.replace(/'/g, "\\'")}', '${(u.display_name||'').replace(/'/g, "\\'")}', '${u.atlas_person_id}'); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas fa-key" style="width: 20px; text-align: center; margin-right: 5px;"></i> Change Password
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.toggleUserStatus('${u.account_id}', ${!u.enabled}); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas ${u.enabled ? 'fa-user-slash' : 'fa-user-check'}" style="width: 20px; text-align: center; margin-right: 5px;"></i> ${u.enabled ? 'Disable' : 'Enable'} Account
+                                </a>
+                                ${u.atlas_person_id ? `
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.enrollUserFace('${u.atlas_person_id}'); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas fa-camera" style="width: 20px; text-align: center; margin-right: 5px;"></i> Enroll Face
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--accent-danger); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.confirmResetBiometrics('${u.atlas_person_id}', '${u.username.replace(/'/g, "\\'")}'); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas fa-undo" style="width: 20px; text-align: center; margin-right: 5px;"></i> Reset Biometrics
+                                </a>
+                                ` : ''}
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--accent-danger); text-decoration: none; font-size: 0.9em; border-top: 1px solid var(--border-color); margin-top: 5px; transition: background 0.2s;" onclick="event.preventDefault(); window.confirmDeleteUser('${u.account_id}', '${u.username.replace(/'/g, "\\'")}'); window.toggleUserDropdown('${u.account_id}');">
+                                    <i class="fas fa-trash-alt" style="width: 20px; text-align: center; margin-right: 5px;"></i> Delete User
+                                </a>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -313,9 +330,14 @@ export function renderUserManagement(containerId, sessionId, onRefreshDashboard)
                     <h2 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
                         <i class="fas fa-users" style="color: var(--accent-color);"></i> User Management
                     </h2>
-                    <button class="btn-secondary btn-sm" id="btn-refresh-users">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary btn-sm" id="btn-create-user">
+                            <i class="fas fa-plus"></i> CREATE USER
+                        </button>
+                        <button class="btn-secondary btn-sm" id="btn-refresh-users">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Controls Bar -->
@@ -395,6 +417,9 @@ export function renderUserManagement(containerId, sessionId, onRefreshDashboard)
         });
         document.getElementById("btn-refresh-users").addEventListener("click", () => {
             loadUsers();
+        });
+        document.getElementById("btn-create-user").addEventListener("click", () => {
+            window.openCreateUserModal();
         });
 
         // Set focus back to search if it was focused (naive preservation)
@@ -602,6 +627,486 @@ export function renderUserManagement(containerId, sessionId, onRefreshDashboard)
     window.enrollUserFace = enrollFace;
     window.sortUsers = handleSort;
     window.viewUserDetails = viewUserDetails;
+    
+    window.openCreateUserModal = () => {
+        let modal = document.getElementById("create-user-modal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "create-user-modal";
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+                z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+            `;
+            
+            modal.innerHTML = `
+                <div class="glass-panel" style="width: 450px; padding: 30px; position: relative; transform: translateY(-20px); transition: transform 0.3s ease;">
+                    <button class="btn-secondary btn-sm" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none;" onclick="document.getElementById('create-user-modal').style.display='none'">
+                        <i class="fas fa-times" style="font-size: 1.2em;"></i>
+                    </button>
+                    <h2 style="margin-top: 0; color: var(--accent-color); font-family: var(--font-heading);"><i class="fas fa-user-plus"></i> Create User</h2>
+                    <div id="cu-error" style="color: var(--accent-danger); background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    <div id="cu-success" style="color: var(--success-color); background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    
+                    <form id="cu-form" onsubmit="return false;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Display Name *</label>
+                            <input type="text" id="cu-display" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Username *</label>
+                            <input type="text" id="cu-username" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Password *</label>
+                            <input type="password" id="cu-password" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Confirm Password *</label>
+                            <input type="password" id="cu-confirm" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Role *</label>
+                            <select id="cu-role" class="input-field" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+                                <option value="USER">USER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="cu-submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: bold;">
+                            <i class="fas fa-check"></i> CREATE USER
+                        </button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById("cu-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const errDiv = document.getElementById("cu-error");
+                const succDiv = document.getElementById("cu-success");
+                const btn = document.getElementById("cu-submit");
+                
+                errDiv.style.display = "none";
+                succDiv.style.display = "none";
+                
+                const dName = document.getElementById("cu-display").value.trim();
+                const uName = document.getElementById("cu-username").value.trim();
+                const pwd = document.getElementById("cu-password").value;
+                const conf = document.getElementById("cu-confirm").value;
+                const role = document.getElementById("cu-role").value;
+                
+                if (!dName || !uName || !pwd || !conf) {
+                    errDiv.innerText = "All fields are required.";
+                    errDiv.style.display = "block";
+                    return;
+                }
+                if (pwd !== conf) {
+                    errDiv.innerText = "Passwords do not match.";
+                    errDiv.style.display = "block";
+                    return;
+                }
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Creating...';
+                
+                try {
+                    const res = await fetch("/api/v1/admin/users", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${sessionId}`
+                        },
+                        body: JSON.stringify({
+                            username: uName,
+                            password: pwd,
+                            display_name: dName,
+                            role: role,
+                            enabled: true
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        throw new Error(data.error || "Failed to create user");
+                    }
+                    
+                    succDiv.innerText = "User created successfully!";
+                    succDiv.style.display = "block";
+                    
+                    document.getElementById("cu-form").reset();
+                    
+                    // Refresh table silently in background
+                    loadUsers();
+                    
+                    setTimeout(() => {
+                        modal.style.display = "none";
+                    }, 1500);
+                    
+                } catch (err) {
+                    errDiv.innerText = err.message;
+                    errDiv.style.display = "block";
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check"></i> CREATE USER';
+                }
+            });
+        }
+        
+        // Reset form on open
+        document.getElementById("cu-form").reset();
+        document.getElementById("cu-error").style.display = "none";
+        document.getElementById("cu-success").style.display = "none";
+        
+        modal.style.display = "flex";
+        setTimeout(() => {
+            modal.style.opacity = "1";
+            modal.querySelector(".glass-panel").style.transform = "translateY(0)";
+        }, 10);
+    };
+
+    window.toggleUserDropdown = (accountId) => {
+        // Close all other dropdowns
+        document.querySelectorAll('.action-dropdown').forEach(dropdown => {
+            if (dropdown.id !== `dropdown-${accountId}`) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        // Toggle the target dropdown
+        const dropdown = document.getElementById(`dropdown-${accountId}`);
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+    };
+    
+    // Close dropdowns if clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.dropdown-btn') && !e.target.closest('.action-dropdown')) {
+            document.querySelectorAll('.action-dropdown').forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+        }
+    });
+
+    window.openEditUserModal = (accountId, personId, username, displayName, role, enabled) => {
+        let modal = document.getElementById("edit-user-modal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "edit-user-modal";
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+                z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+            `;
+            
+            modal.innerHTML = `
+                <div class="glass-panel" style="width: 450px; padding: 30px; position: relative; transform: translateY(-20px); transition: transform 0.3s ease;">
+                    <button class="btn-secondary btn-sm" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none;" onclick="document.getElementById('edit-user-modal').style.display='none'">
+                        <i class="fas fa-times" style="font-size: 1.2em;"></i>
+                    </button>
+                    <h2 style="margin-top: 0; color: var(--accent-color); font-family: var(--font-heading);"><i class="fas fa-user-edit"></i> Edit User</h2>
+                    <div id="eu-error" style="color: var(--accent-danger); background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    <div id="eu-success" style="color: var(--success-color); background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    
+                    <form id="eu-form" onsubmit="return false;">
+                        <input type="hidden" id="eu-account-id" />
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Person ID (Read Only)</label>
+                            <input type="text" id="eu-person-id" class="input-field" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: var(--text-secondary); cursor: not-allowed; font-family: monospace; border: 1px dashed var(--border-color);" readonly />
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Display Name *</label>
+                            <input type="text" id="eu-display" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Username *</label>
+                            <input type="text" id="eu-username" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Role *</label>
+                            <select id="eu-role" class="input-field" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+                                <option value="USER">USER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:flex; align-items: center; color: var(--text-secondary); font-size: 0.85em; cursor: pointer;">
+                                <input type="checkbox" id="eu-enabled" style="margin-right: 10px;" /> Account Enabled
+                            </label>
+                        </div>
+                        <button type="submit" id="eu-submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: bold;">
+                            <i class="fas fa-save"></i> SAVE CHANGES
+                        </button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById("eu-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const errDiv = document.getElementById("eu-error");
+                const succDiv = document.getElementById("eu-success");
+                const btn = document.getElementById("eu-submit");
+                
+                errDiv.style.display = "none";
+                succDiv.style.display = "none";
+                
+                const accId = document.getElementById("eu-account-id").value;
+                const dName = document.getElementById("eu-display").value.trim();
+                const uName = document.getElementById("eu-username").value.trim();
+                const role = document.getElementById("eu-role").value;
+                const enabled = document.getElementById("eu-enabled").checked;
+                
+                if (!dName || !uName) {
+                    errDiv.innerText = "All fields are required.";
+                    errDiv.style.display = "block";
+                    return;
+                }
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+                
+                try {
+                    const res = await fetch(`/api/v1/admin/users/${accId}`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${sessionId}`
+                        },
+                        body: JSON.stringify({
+                            username: uName,
+                            display_name: dName,
+                            role: role,
+                            enabled: enabled
+                        })
+                    });
+                    
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Failed to update user");
+                    
+                    succDiv.innerText = "User updated successfully!";
+                    succDiv.style.display = "block";
+                    
+                    loadUsers();
+                    
+                    setTimeout(() => {
+                        modal.style.display = "none";
+                    }, 1000);
+                } catch (err) {
+                    errDiv.innerText = err.message;
+                    errDiv.style.display = "block";
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save"></i> SAVE CHANGES';
+                }
+            });
+        }
+        
+        document.getElementById("eu-error").style.display = "none";
+        document.getElementById("eu-success").style.display = "none";
+        document.getElementById("eu-account-id").value = accountId;
+        
+        const pidField = document.getElementById("eu-person-id");
+        if (pidField) pidField.value = personId || "N/A";
+        
+        document.getElementById("eu-username").value = username;
+        document.getElementById("eu-display").value = displayName;
+        document.getElementById("eu-role").value = role;
+        document.getElementById("eu-enabled").checked = enabled;
+        
+        modal.style.display = "flex";
+        setTimeout(() => {
+            modal.style.opacity = "1";
+            modal.querySelector(".glass-panel").style.transform = "translateY(0)";
+        }, 10);
+    };
+
+    window.openChangePasswordModal = (accountId, username, displayName, personId) => {
+        let modal = document.getElementById("change-password-modal");
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "change-password-modal";
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+                z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+            `;
+            
+            modal.innerHTML = `
+                <div class="glass-panel" style="width: 450px; padding: 30px; position: relative; transform: translateY(-20px); transition: transform 0.3s ease;">
+                    <button class="btn-secondary btn-sm" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none;" onclick="document.getElementById('change-password-modal').style.display='none'">
+                        <i class="fas fa-times" style="font-size: 1.2em;"></i>
+                    </button>
+                    <h2 style="margin-top: 0; color: var(--accent-color); font-family: var(--font-heading);"><i class="fas fa-key"></i> Change Password</h2>
+                    <div id="cp-error" style="color: var(--accent-danger); background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    <div id="cp-success" style="color: var(--success-color); background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    
+                    <form id="cp-form" onsubmit="return false;">
+                        <input type="hidden" id="cp-account-id" />
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">User</label>
+                            <input type="text" id="cp-display" class="input-field" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: var(--text-secondary); cursor: not-allowed; border: 1px dashed var(--border-color);" readonly />
+                        </div>
+                        <div style="margin-bottom: 15px; display: none;" id="cp-current-password-container">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Current Password *</label>
+                            <input type="password" id="cp-current-password" class="input-field" style="width: 100%; box-sizing: border-box;" />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">New Password *</label>
+                            <input type="password" id="cp-new-password" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Confirm New Password *</label>
+                            <input type="password" id="cp-confirm-password" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <button type="submit" id="cp-submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: bold;">
+                            <i class="fas fa-lock"></i> UPDATE PASSWORD
+                        </button>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            document.getElementById("cp-form").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const errDiv = document.getElementById("cp-error");
+                const succDiv = document.getElementById("cp-success");
+                const btn = document.getElementById("cp-submit");
+                
+                errDiv.style.display = "none";
+                succDiv.style.display = "none";
+                
+                const accId = document.getElementById("cp-account-id").value;
+                const currPass = document.getElementById("cp-current-password").value;
+                const newPass = document.getElementById("cp-new-password").value;
+                const confPass = document.getElementById("cp-confirm-password").value;
+                
+                if (newPass !== confPass) {
+                    errDiv.innerText = "New passwords do not match.";
+                    errDiv.style.display = "block";
+                    return;
+                }
+                
+                if (newPass.length < 8) {
+                    errDiv.innerText = "Password must be at least 8 characters.";
+                    errDiv.style.display = "block";
+                    return;
+                }
+                
+                const payload = { new_password: newPass };
+                const currentAccountId = localStorage.getItem("atlas_session_account_id");
+                if (currentAccountId === accId) {
+                    if (!currPass) {
+                        errDiv.innerText = "Current password is required to change your own password.";
+                        errDiv.style.display = "block";
+                        return;
+                    }
+                    payload.current_password = currPass;
+                }
+                
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> UPDATING...';
+                
+                try {
+                    const res = await fetch(`/api/v1/admin/users/${accId}/password`, {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${sessionId}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!res.ok) {
+                        const d = await res.json();
+                        throw new Error(d.error || "Failed to update password");
+                    }
+                    
+                    succDiv.innerText = "Password updated successfully.";
+                    succDiv.style.display = "block";
+                    
+                    // Clear inputs securely
+                    document.getElementById("cp-current-password").value = "";
+                    document.getElementById("cp-new-password").value = "";
+                    document.getElementById("cp-confirm-password").value = "";
+                    
+                    setTimeout(() => {
+                        modal.style.display = "none";
+                        // If it was the current user, session is revoked, page should auto-refresh or logout
+                        if (currentAccountId === accId) {
+                            window.location.reload();
+                        } else {
+                            loadUsers();
+                        }
+                    }, 1500);
+                } catch (err) {
+                    errDiv.innerText = err.message;
+                    errDiv.style.display = "block";
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock"></i> UPDATE PASSWORD';
+                }
+            });
+        }
+        
+        // Setup Modal State
+        setTimeout(() => {
+            modal.style.opacity = "1";
+            modal.querySelector(".glass-panel").style.transform = "translateY(0)";
+        }, 10);
+        
+        document.getElementById("cp-error").style.display = "none";
+        document.getElementById("cp-success").style.display = "none";
+        document.getElementById("cp-account-id").value = accountId;
+        
+        document.getElementById("cp-display").value = `${displayName} (@${username})`;
+        
+        const currentAccountId = localStorage.getItem("atlas_session_account_id");
+        if (currentAccountId === accountId) {
+            document.getElementById("cp-current-password-container").style.display = "block";
+            document.getElementById("cp-current-password").required = true;
+        } else {
+            document.getElementById("cp-current-password-container").style.display = "none";
+            document.getElementById("cp-current-password").required = false;
+        }
+        
+        document.getElementById("cp-current-password").value = "";
+        document.getElementById("cp-new-password").value = "";
+        document.getElementById("cp-confirm-password").value = "";
+        
+        modal.style.display = "flex";
+    };
+
+    window.confirmDeleteUser = (accountId, username) => {
+        if (confirm(`Are you SURE you want to permanently delete ${username}?\nThis action cannot be undone.`)) {
+            fetch(`/api/v1/admin/users/${accountId}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${sessionId}` }
+            }).then(async res => {
+                const data = await res.json();
+                if (!res.ok) alert("Error deleting user: " + (data.error || "Unknown"));
+                else loadUsers();
+            }).catch(e => alert("Network error"));
+        }
+    };
+
+    window.confirmResetBiometrics = (personId, username) => {
+        if (confirm(`Are you sure you want to reset biometrics for ${username}?`)) {
+            fetch(`/api/v1/admin/people/${personId}/reset-biometrics`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${sessionId}` }
+            }).then(async res => {
+                const data = await res.json();
+                if (!res.ok) alert("Error resetting biometrics: " + (data.error || "Unknown"));
+                else loadUsers();
+            }).catch(e => alert("Network error"));
+        }
+    };
+
+
 
     loadUsers();
 }

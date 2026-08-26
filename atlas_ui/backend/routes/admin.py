@@ -5,6 +5,8 @@ from fastapi.responses import JSONResponse
 from atlas_ui.backend.schemas.admin import (
     AdminUserCreateRequest,
     AdminUserStatusUpdateRequest,
+    AdminUserUpdateRequest,
+    AdminPasswordChangeRequest,
     UnifiedUserResponse,
     UnifiedUserListResponse
 )
@@ -997,3 +999,195 @@ async def get_user_location_history(
 
     paged = _paginate(locations, page, limit)
     return {"person_id": person_id, **paged}
+
+
+@router.put("/users/{account_id}")
+async def update_user(account_id: str, body: AdminUserUpdateRequest, request: Request):
+    access_controller = request.app.state.access_controller
+    account_registry = request.app.state.account_registry
+    person_registry = request.app.state.person_registry
+    
+    sess_id = request.headers.get("Authorization")
+    if sess_id and sess_id.startswith("Bearer "):
+        sess_id = sess_id[7:]
+    else:
+        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+        
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "MANAGE_USERS"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    # Guard: prevent editing role/enabled if this is the last active ADMIN
+    try:
+        target_acc = account_registry.get_account(account_id)
+        if not target_acc:
+            return JSONResponse(status_code=404, content={"error": "Account not found"})
+        
+        if target_acc.role == "ADMIN" and target_acc.enabled:
+            # check if this is the LAST active admin
+            if body.role != "ADMIN" or not body.enabled:
+                admins = [a for a in account_registry.list_accounts() if a.role == "ADMIN" and a.enabled]
+                if len(admins) <= 1:
+                    return JSONResponse(status_code=400, content={"error": "Cannot downgrade or disable the final active administrator."})
+                    
+        account_registry.update_account(account_id, username=body.username, role=body.role, enabled=body.enabled)
+        
+        person = person_registry.get_person_by_account(account_id)
+        if person:
+            person_registry.update_person(person.atlas_person_id, display_name=body.display_name, role=body.role)
+            
+        # If disabled, revoke sessions
+        if not body.enabled:
+            active_sessions = session_manager.list_active_sessions()
+            for s in active_sessions:
+                if s.account_id == account_id:
+                    session_manager.revoke_session(s.session_id)
+                    
+        return {"success": True, "message": "User updated"}
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
+
+
+@router.delete("/users/{account_id}")
+async def delete_user(account_id: str, request: Request):
+    access_controller = request.app.state.access_controller
+    account_registry = request.app.state.account_registry
+    person_registry = request.app.state.person_registry
+    
+    sess_id = request.headers.get("Authorization")
+    if sess_id and sess_id.startswith("Bearer "):
+        sess_id = sess_id[7:]
+    else:
+        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+        
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "MANAGE_USERS"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    try:
+        target_acc = account_registry.get_account(account_id)
+        if not target_acc:
+            return JSONResponse(status_code=404, content={"error": "Account not found"})
+        
+        # Guard: prevent deleting the last active ADMIN
+        if target_acc.role == "ADMIN" and target_acc.enabled:
+            admins = [a for a in account_registry.list_accounts() if a.role == "ADMIN" and a.enabled]
+            if len(admins) <= 1:
+                return JSONResponse(status_code=400, content={"error": "Cannot delete the final active administrator."})
+                
+        # Revoke sessions
+        active_sessions = session_manager.list_active_sessions()
+        for s in active_sessions:
+            if s.account_id == account_id:
+                session_manager.revoke_session(s.session_id)
+                
+        # Delete templates and person
+        person = person_registry.get_person_by_account(account_id)
+        if person:
+            from atlas_ui.backend.routes.biometric import _face_store
+            _face_store.remove_templates(person.atlas_person_id)
+            person_registry.remove_person(person.atlas_person_id)
+            
+        # Remove Account
+        account_registry.remove_account(account_id)
+        
+        return {"success": True, "message": "User deleted"}
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
+
+
+@router.post("/people/{person_id}/reset-biometrics")
+async def reset_biometrics(person_id: str, request: Request):
+    access_controller = request.app.state.access_controller
+    person_registry = request.app.state.person_registry
+    
+    sess_id = request.headers.get("Authorization")
+    if sess_id and sess_id.startswith("Bearer "):
+        sess_id = sess_id[7:]
+    else:
+        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+        
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "MANAGE_USERS"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    try:
+        person = person_registry.get_person(person_id)
+        if not person:
+            return JSONResponse(status_code=404, content={"error": "Person not found"})
+            
+        from atlas_ui.backend.routes.biometric import _face_store
+        _face_store.remove_templates(person_id)
+        
+        person_registry.update_person(person_id, face_enrollment_status="NOT_ENROLLED", template_count=0)
+        
+        return {"success": True, "message": "Biometrics reset"}
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
+
+@router.put("/users/{account_id}/password")
+async def change_password(account_id: str, body: AdminPasswordChangeRequest, request: Request):
+    access_controller = request.app.state.access_controller
+    account_registry = request.app.state.account_registry
+    
+    sess_id = request.headers.get("Authorization")
+    if sess_id and sess_id.startswith("Bearer "):
+        sess_id = sess_id[7:]
+    else:
+        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+        
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "MANAGE_USERS"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    try:
+        target_acc = account_registry.get_account(account_id)
+        if not target_acc:
+            return JSONResponse(status_code=404, content={"error": "Account not found"})
+            
+        # If changing own password, verify current password
+        if sess.account_id == account_id:
+            if not body.current_password:
+                return JSONResponse(status_code=400, content={"error": "Current password is required to change your own password."})
+                
+            from atlas_ui.backend.identity.credential_verifier import CredentialVerifier
+            verifier = CredentialVerifier(account_registry)
+            try:
+                verifier.verify_credentials(target_acc.username, body.current_password)
+            except ValueError:
+                return JSONResponse(status_code=401, content={"error": "Incorrect current password."})
+                
+        # Generate new salt and hash
+        import secrets
+        from atlas_ui.backend.identity.credential_verifier import CredentialVerifier
+        
+        new_salt_bytes = secrets.token_bytes(16)
+        new_hash_bytes = CredentialVerifier.hash_password(body.new_password, new_salt_bytes)
+        
+        account_registry.update_account(
+            account_id,
+            password_hash=new_hash_bytes.hex(),
+            password_salt=new_salt_bytes.hex()
+        )
+        
+        # Revoke all sessions for this user so they must log in again
+        active_sessions = session_manager.list_active_sessions()
+        for s in active_sessions:
+            if s.account_id == account_id:
+                session_manager.revoke_session(s.session_id)
+                
+        return {"success": True, "message": "Password changed successfully."}
+    except Exception as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})

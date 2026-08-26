@@ -11,6 +11,16 @@ class AdminUserCreateRequest(BaseModel):
 class AdminUserStatusUpdateRequest(BaseModel):
     enabled: bool
 
+class AdminPasswordChangeRequest(BaseModel):
+    new_password: str = Field(..., min_length=1)
+    current_password: Optional[str] = None
+
+class AdminUserUpdateRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+    display_name: str = Field(..., min_length=1)
+    role: str = Field(..., min_length=1)
+    enabled: bool
+
 class UnifiedUserResponse(BaseModel):
     # ── IDENTITY ──────────────────────────────────────────────────────────
     account_id: str

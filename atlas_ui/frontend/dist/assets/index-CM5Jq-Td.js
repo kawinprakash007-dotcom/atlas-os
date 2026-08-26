@@ -343,18 +343,35 @@
                         <span class="status-badge ${r}" title="${i}">${n}</span>
                     </td>
                     <td style="padding: 15px 10px;">
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn-secondary btn-sm" onclick="window.viewUserDetails('${e.atlas_person_id}')" title="View Details">
-                                <i class="fas fa-eye"></i>
+                        <div style="position: relative;">
+                            <button class="btn-secondary btn-sm dropdown-btn" onclick="window.toggleUserDropdown('${e.account_id}')" style="width: 100px;">
+                                ACTIONS ▼
                             </button>
-                            <button class="btn-secondary btn-sm" onclick="window.toggleUserStatus('${e.account_id}', ${!e.enabled})" title="${e.enabled?`Disable Account`:`Enable Account`}">
-                                <i class="fas ${e.enabled?`fa-user-slash`:`fa-user-check`}"></i>
-                            </button>
-                            ${e.atlas_person_id?`
-                            <button class="btn-primary btn-sm" onclick="window.enrollUserFace('${e.atlas_person_id}')" title="Enroll Face">
-                                <i class="fas fa-camera"></i> Enroll
-                            </button>
-                            `:``}
+                            <div id="dropdown-${e.account_id}" class="action-dropdown" style="display: none; position: absolute; top: 100%; right: 0; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 100; min-width: 200px; text-align: left; padding: 5px 0;">
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.viewUserDetails('${e.atlas_person_id}'); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas fa-eye" style="width: 20px; text-align: center; margin-right: 5px;"></i> View Details
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.openEditUserModal('${e.account_id}', '${e.atlas_person_id}', '${e.username.replace(/'/g,`\\'`)}', '${(e.display_name||``).replace(/'/g,`\\'`)}', '${e.role}', ${e.enabled}); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas fa-edit" style="width: 20px; text-align: center; margin-right: 5px;"></i> Edit User
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.openChangePasswordModal('${e.account_id}', '${e.username.replace(/'/g,`\\'`)}', '${(e.display_name||``).replace(/'/g,`\\'`)}', '${e.atlas_person_id}'); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas fa-key" style="width: 20px; text-align: center; margin-right: 5px;"></i> Change Password
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.toggleUserStatus('${e.account_id}', ${!e.enabled}); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas ${e.enabled?`fa-user-slash`:`fa-user-check`}" style="width: 20px; text-align: center; margin-right: 5px;"></i> ${e.enabled?`Disable`:`Enable`} Account
+                                </a>
+                                ${e.atlas_person_id?`
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--text-primary); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.enrollUserFace('${e.atlas_person_id}'); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas fa-camera" style="width: 20px; text-align: center; margin-right: 5px;"></i> Enroll Face
+                                </a>
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--accent-danger); text-decoration: none; font-size: 0.9em; transition: background 0.2s;" onclick="event.preventDefault(); window.confirmResetBiometrics('${e.atlas_person_id}', '${e.username.replace(/'/g,`\\'`)}'); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas fa-undo" style="width: 20px; text-align: center; margin-right: 5px;"></i> Reset Biometrics
+                                </a>
+                                `:``}
+                                <a href="#" style="display: block; padding: 8px 15px; color: var(--accent-danger); text-decoration: none; font-size: 0.9em; border-top: 1px solid var(--border-color); margin-top: 5px; transition: background 0.2s;" onclick="event.preventDefault(); window.confirmDeleteUser('${e.account_id}', '${e.username.replace(/'/g,`\\'`)}'); window.toggleUserDropdown('${e.account_id}');">
+                                    <i class="fas fa-trash-alt" style="width: 20px; text-align: center; margin-right: 5px;"></i> Delete User
+                                </a>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -364,9 +381,14 @@
                     <h2 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
                         <i class="fas fa-users" style="color: var(--accent-color);"></i> User Management
                     </h2>
-                    <button class="btn-secondary btn-sm" id="btn-refresh-users">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary btn-sm" id="btn-create-user">
+                            <i class="fas fa-plus"></i> CREATE USER
+                        </button>
+                        <button class="btn-secondary btn-sm" id="btn-refresh-users">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Controls Bar -->
@@ -421,7 +443,7 @@
                     Showing ${e.length} of ${a.length} total users
                 </div>
             </div>
-        `,document.getElementById(`um-search`).addEventListener(`input`,e=>{o.searchQuery=e.target.value,p()}),document.getElementById(`um-filter-role`).addEventListener(`change`,e=>{o.roleFilter=e.target.value,p()}),document.getElementById(`um-filter-status`).addEventListener(`change`,e=>{o.statusFilter=e.target.value,p()}),document.getElementById(`um-filter-bio`).addEventListener(`change`,e=>{o.bioFilter=e.target.value,p()}),document.getElementById(`um-filter-online`).addEventListener(`change`,e=>{o.onlineFilter=e.target.value,p()}),document.getElementById(`btn-refresh-users`).addEventListener(`click`,()=>{s()}),document.activeElement&&document.activeElement.id===`um-search`){let e=document.getElementById(`um-search`),t=e.value;e.focus(),e.value=``,e.value=t}};window.toggleUserStatus=c,window.enrollUserFace=l,window.sortUsers=u,window.viewUserDetails=async e=>{if(!e)return;let t=document.getElementById(`user-intelligence-panel`);t||(t=document.createElement(`div`),t.id=`user-intelligence-panel`,t.className=`glass-panel`,t.style.cssText=`
+        `,document.getElementById(`um-search`).addEventListener(`input`,e=>{o.searchQuery=e.target.value,p()}),document.getElementById(`um-filter-role`).addEventListener(`change`,e=>{o.roleFilter=e.target.value,p()}),document.getElementById(`um-filter-status`).addEventListener(`change`,e=>{o.statusFilter=e.target.value,p()}),document.getElementById(`um-filter-bio`).addEventListener(`change`,e=>{o.bioFilter=e.target.value,p()}),document.getElementById(`um-filter-online`).addEventListener(`change`,e=>{o.onlineFilter=e.target.value,p()}),document.getElementById(`btn-refresh-users`).addEventListener(`click`,()=>{s()}),document.getElementById(`btn-create-user`).addEventListener(`click`,()=>{window.openCreateUserModal()}),document.activeElement&&document.activeElement.id===`um-search`){let e=document.getElementById(`um-search`),t=e.value;e.focus(),e.value=``,e.value=t}};window.toggleUserStatus=c,window.enrollUserFace=l,window.sortUsers=u,window.viewUserDetails=async e=>{if(!e)return;let t=document.getElementById(`user-intelligence-panel`);t||(t=document.createElement(`div`),t.id=`user-intelligence-panel`,t.className=`glass-panel`,t.style.cssText=`
                 position: fixed; top: 0; right: 0; width: 450px; height: 100vh;
                 background: rgba(10, 15, 25, 0.95); border-left: 1px solid var(--border-color);
                 box-shadow: -5px 0 25px rgba(0,0,0,0.8); z-index: 1000;
@@ -549,9 +571,133 @@
                     <button class="btn-secondary btn-sm" onclick="document.getElementById('user-intelligence-panel').style.transform = 'translateX(100%)'">Close</button>
                 </div>
                 <div style="color: var(--accent-danger); padding: 20px; background: rgba(255,0,0,0.1); border-radius: 8px;">${e.message}</div>
-            `}},s()}function p(e,t,n){let r=document.getElementById(`app`);r.innerHTML=`
+            `}},window.openCreateUserModal=()=>{let e=document.getElementById(`create-user-modal`);e||(e=document.createElement(`div`),e.id=`create-user-modal`,e.style.cssText=`
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+                z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+            `,e.innerHTML=`
+                <div class="glass-panel" style="width: 450px; padding: 30px; position: relative; transform: translateY(-20px); transition: transform 0.3s ease;">
+                    <button class="btn-secondary btn-sm" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none;" onclick="document.getElementById('create-user-modal').style.display='none'">
+                        <i class="fas fa-times" style="font-size: 1.2em;"></i>
+                    </button>
+                    <h2 style="margin-top: 0; color: var(--accent-color); font-family: var(--font-heading);"><i class="fas fa-user-plus"></i> Create User</h2>
+                    <div id="cu-error" style="color: var(--accent-danger); background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    <div id="cu-success" style="color: var(--success-color); background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    
+                    <form id="cu-form" onsubmit="return false;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Display Name *</label>
+                            <input type="text" id="cu-display" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Username *</label>
+                            <input type="text" id="cu-username" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Password *</label>
+                            <input type="password" id="cu-password" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Confirm Password *</label>
+                            <input type="password" id="cu-confirm" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Role *</label>
+                            <select id="cu-role" class="input-field" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+                                <option value="USER">USER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="cu-submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: bold;">
+                            <i class="fas fa-check"></i> CREATE USER
+                        </button>
+                    </form>
+                </div>
+            `,document.body.appendChild(e),document.getElementById(`cu-form`).addEventListener(`submit`,async t=>{t.preventDefault();let r=document.getElementById(`cu-error`),i=document.getElementById(`cu-success`),a=document.getElementById(`cu-submit`);r.style.display=`none`,i.style.display=`none`;let o=document.getElementById(`cu-display`).value.trim(),c=document.getElementById(`cu-username`).value.trim(),l=document.getElementById(`cu-password`).value,u=document.getElementById(`cu-confirm`).value,d=document.getElementById(`cu-role`).value;if(!o||!c||!l||!u){r.innerText=`All fields are required.`,r.style.display=`block`;return}if(l!==u){r.innerText=`Passwords do not match.`,r.style.display=`block`;return}a.disabled=!0,a.innerHTML=`<i class="fas fa-circle-notch fa-spin"></i> Creating...`;try{let t=await fetch(`/api/v1/admin/users`,{method:`POST`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify({username:c,password:l,display_name:o,role:d,enabled:!0})}),r=await t.json();if(!t.ok)throw Error(r.error||`Failed to create user`);i.innerText=`User created successfully!`,i.style.display=`block`,document.getElementById(`cu-form`).reset(),s(),setTimeout(()=>{e.style.display=`none`},1500)}catch(e){r.innerText=e.message,r.style.display=`block`}finally{a.disabled=!1,a.innerHTML=`<i class="fas fa-check"></i> CREATE USER`}})),document.getElementById(`cu-form`).reset(),document.getElementById(`cu-error`).style.display=`none`,document.getElementById(`cu-success`).style.display=`none`,e.style.display=`flex`,setTimeout(()=>{e.style.opacity=`1`,e.querySelector(`.glass-panel`).style.transform=`translateY(0)`},10)},window.toggleUserDropdown=e=>{document.querySelectorAll(`.action-dropdown`).forEach(t=>{t.id!==`dropdown-${e}`&&(t.style.display=`none`)});let t=document.getElementById(`dropdown-${e}`);t&&(t.style.display=t.style.display===`none`?`block`:`none`)},document.addEventListener(`click`,e=>{!e.target.closest(`.dropdown-btn`)&&!e.target.closest(`.action-dropdown`)&&document.querySelectorAll(`.action-dropdown`).forEach(e=>{e.style.display=`none`})}),window.openEditUserModal=(e,t,r,i,a,o)=>{let c=document.getElementById(`edit-user-modal`);c||(c=document.createElement(`div`),c.id=`edit-user-modal`,c.style.cssText=`
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+                z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+            `,c.innerHTML=`
+                <div class="glass-panel" style="width: 450px; padding: 30px; position: relative; transform: translateY(-20px); transition: transform 0.3s ease;">
+                    <button class="btn-secondary btn-sm" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none;" onclick="document.getElementById('edit-user-modal').style.display='none'">
+                        <i class="fas fa-times" style="font-size: 1.2em;"></i>
+                    </button>
+                    <h2 style="margin-top: 0; color: var(--accent-color); font-family: var(--font-heading);"><i class="fas fa-user-edit"></i> Edit User</h2>
+                    <div id="eu-error" style="color: var(--accent-danger); background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    <div id="eu-success" style="color: var(--success-color); background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    
+                    <form id="eu-form" onsubmit="return false;">
+                        <input type="hidden" id="eu-account-id" />
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Person ID (Read Only)</label>
+                            <input type="text" id="eu-person-id" class="input-field" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: var(--text-secondary); cursor: not-allowed; font-family: monospace; border: 1px dashed var(--border-color);" readonly />
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Display Name *</label>
+                            <input type="text" id="eu-display" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Username *</label>
+                            <input type="text" id="eu-username" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Role *</label>
+                            <select id="eu-role" class="input-field" style="width: 100%; box-sizing: border-box; cursor: pointer;">
+                                <option value="USER">USER</option>
+                                <option value="ADMIN">ADMIN</option>
+                            </select>
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:flex; align-items: center; color: var(--text-secondary); font-size: 0.85em; cursor: pointer;">
+                                <input type="checkbox" id="eu-enabled" style="margin-right: 10px;" /> Account Enabled
+                            </label>
+                        </div>
+                        <button type="submit" id="eu-submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: bold;">
+                            <i class="fas fa-save"></i> SAVE CHANGES
+                        </button>
+                    </form>
+                </div>
+            `,document.body.appendChild(c),document.getElementById(`eu-form`).addEventListener(`submit`,async e=>{e.preventDefault();let t=document.getElementById(`eu-error`),r=document.getElementById(`eu-success`),i=document.getElementById(`eu-submit`);t.style.display=`none`,r.style.display=`none`;let a=document.getElementById(`eu-account-id`).value,o=document.getElementById(`eu-display`).value.trim(),l=document.getElementById(`eu-username`).value.trim(),u=document.getElementById(`eu-role`).value,d=document.getElementById(`eu-enabled`).checked;if(!o||!l){t.innerText=`All fields are required.`,t.style.display=`block`;return}i.disabled=!0,i.innerHTML=`<i class="fas fa-circle-notch fa-spin"></i> Saving...`;try{let e=await fetch(`/api/v1/admin/users/${a}`,{method:`PUT`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify({username:l,display_name:o,role:u,enabled:d})}),t=await e.json();if(!e.ok)throw Error(t.error||`Failed to update user`);r.innerText=`User updated successfully!`,r.style.display=`block`,s(),setTimeout(()=>{c.style.display=`none`},1e3)}catch(e){t.innerText=e.message,t.style.display=`block`}finally{i.disabled=!1,i.innerHTML=`<i class="fas fa-save"></i> SAVE CHANGES`}})),document.getElementById(`eu-error`).style.display=`none`,document.getElementById(`eu-success`).style.display=`none`,document.getElementById(`eu-account-id`).value=e;let l=document.getElementById(`eu-person-id`);l&&(l.value=t||`N/A`),document.getElementById(`eu-username`).value=r,document.getElementById(`eu-display`).value=i,document.getElementById(`eu-role`).value=a,document.getElementById(`eu-enabled`).checked=o,c.style.display=`flex`,setTimeout(()=>{c.style.opacity=`1`,c.querySelector(`.glass-panel`).style.transform=`translateY(0)`},10)},window.openChangePasswordModal=(e,t,r,i)=>{let a=document.getElementById(`change-password-modal`);a||(a=document.createElement(`div`),a.id=`change-password-modal`,a.style.cssText=`
+                position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+                z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+            `,a.innerHTML=`
+                <div class="glass-panel" style="width: 450px; padding: 30px; position: relative; transform: translateY(-20px); transition: transform 0.3s ease;">
+                    <button class="btn-secondary btn-sm" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none;" onclick="document.getElementById('change-password-modal').style.display='none'">
+                        <i class="fas fa-times" style="font-size: 1.2em;"></i>
+                    </button>
+                    <h2 style="margin-top: 0; color: var(--accent-color); font-family: var(--font-heading);"><i class="fas fa-key"></i> Change Password</h2>
+                    <div id="cp-error" style="color: var(--accent-danger); background: rgba(255,0,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    <div id="cp-success" style="color: var(--success-color); background: rgba(0,255,0,0.1); padding: 10px; border-radius: 4px; margin-bottom: 15px; display: none; font-size: 0.9em;"></div>
+                    
+                    <form id="cp-form" onsubmit="return false;">
+                        <input type="hidden" id="cp-account-id" />
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">User</label>
+                            <input type="text" id="cp-display" class="input-field" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: var(--text-secondary); cursor: not-allowed; border: 1px dashed var(--border-color);" readonly />
+                        </div>
+                        <div style="margin-bottom: 15px; display: none;" id="cp-current-password-container">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Current Password *</label>
+                            <input type="password" id="cp-current-password" class="input-field" style="width: 100%; box-sizing: border-box;" />
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">New Password *</label>
+                            <input type="password" id="cp-new-password" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <div style="margin-bottom: 25px;">
+                            <label style="display:block; margin-bottom:5px; color: var(--text-secondary); font-size: 0.85em;">Confirm New Password *</label>
+                            <input type="password" id="cp-confirm-password" class="input-field" style="width: 100%; box-sizing: border-box;" required />
+                        </div>
+                        <button type="submit" id="cp-submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: bold;">
+                            <i class="fas fa-lock"></i> UPDATE PASSWORD
+                        </button>
+                    </form>
+                </div>
+            `,document.body.appendChild(a),document.getElementById(`cp-form`).addEventListener(`submit`,async e=>{e.preventDefault();let t=document.getElementById(`cp-error`),r=document.getElementById(`cp-success`),i=document.getElementById(`cp-submit`);t.style.display=`none`,r.style.display=`none`;let o=document.getElementById(`cp-account-id`).value,c=document.getElementById(`cp-current-password`).value,l=document.getElementById(`cp-new-password`).value;if(l!==document.getElementById(`cp-confirm-password`).value){t.innerText=`New passwords do not match.`,t.style.display=`block`;return}if(l.length<8){t.innerText=`Password must be at least 8 characters.`,t.style.display=`block`;return}let u={new_password:l},d=localStorage.getItem(`atlas_session_account_id`);if(d===o){if(!c){t.innerText=`Current password is required to change your own password.`,t.style.display=`block`;return}u.current_password=c}i.disabled=!0,i.innerHTML=`<i class="fas fa-spinner fa-spin"></i> UPDATING...`;try{let e=await fetch(`/api/v1/admin/users/${o}/password`,{method:`PUT`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify(u)});if(!e.ok){let t=await e.json();throw Error(t.error||`Failed to update password`)}r.innerText=`Password updated successfully.`,r.style.display=`block`,document.getElementById(`cp-current-password`).value=``,document.getElementById(`cp-new-password`).value=``,document.getElementById(`cp-confirm-password`).value=``,setTimeout(()=>{a.style.display=`none`,d===o?window.location.reload():s()},1500)}catch(e){t.innerText=e.message,t.style.display=`block`}finally{i.disabled=!1,i.innerHTML=`<i class="fas fa-lock"></i> UPDATE PASSWORD`}})),setTimeout(()=>{a.style.opacity=`1`,a.querySelector(`.glass-panel`).style.transform=`translateY(0)`},10),document.getElementById(`cp-error`).style.display=`none`,document.getElementById(`cp-success`).style.display=`none`,document.getElementById(`cp-account-id`).value=e,document.getElementById(`cp-display`).value=`${r} (@${t})`,localStorage.getItem(`atlas_session_account_id`)===e?(document.getElementById(`cp-current-password-container`).style.display=`block`,document.getElementById(`cp-current-password`).required=!0):(document.getElementById(`cp-current-password-container`).style.display=`none`,document.getElementById(`cp-current-password`).required=!1),document.getElementById(`cp-current-password`).value=``,document.getElementById(`cp-new-password`).value=``,document.getElementById(`cp-confirm-password`).value=``,a.style.display=`flex`},window.confirmDeleteUser=(e,t)=>{confirm(`Are you SURE you want to permanently delete ${t}?\nThis action cannot be undone.`)&&fetch(`/api/v1/admin/users/${e}`,{method:`DELETE`,headers:{Authorization:`Bearer ${n}`}}).then(async e=>{let t=await e.json();e.ok?s():alert(`Error deleting user: `+(t.error||`Unknown`))}).catch(e=>alert(`Network error`))},window.confirmResetBiometrics=(e,t)=>{confirm(`Are you sure you want to reset biometrics for ${t}?`)&&fetch(`/api/v1/admin/people/${e}/reset-biometrics`,{method:`POST`,headers:{Authorization:`Bearer ${n}`}}).then(async e=>{let t=await e.json();e.ok?s():alert(`Error resetting biometrics: `+(t.error||`Unknown`))}).catch(e=>alert(`Network error`))},s()}function p(e,t,n){let r=document.getElementById(`app`),i=`overview`,a=null;r.innerHTML=`
         <div class="dashboard-wrapper">
-            ${o(e,`overview`)}
+            <div id="sidebar-container"></div>
             <main class="dashboard-main">
                 <header class="panel-header">
                     <h1 class="panel-title">Admin Command Center</h1>
@@ -566,20 +712,42 @@
                 </div>
             </main>
         </div>
-    `,document.getElementById(`btn-logout`).addEventListener(`click`,()=>{n()});async function i(){try{let e=await fetch(`/api/v1/dashboard`,{method:`GET`,headers:{Authorization:`Bearer ${t}`}});if(!e.ok)throw Error(`Failed to load dashboard statistics.`);let n=await e.json(),r=document.getElementById(`dashboard-content`);r.innerHTML=`
-                <div class="grid-col">
-                    ${l(n.system_status,n.role)}
-                    <div style="margin-top: 25px;"></div>
-                    ${s(n.devices)}
-                </div>
-                <div class="grid-col">
-                    ${c(n.recent_events,n.alerts)}
-                </div>
-                
-                <!-- Admin specific operations card -->
-                <div id="user-management-container" style="grid-column: span 2; margin-top: 20px;"></div>
-            `,f(`user-management-container`,t,i)}catch(e){document.getElementById(`dashboard-content`).innerHTML=`
+    `;function u(){document.getElementById(`sidebar-container`).innerHTML=o(e,i),d(),document.getElementById(`btn-logout`).addEventListener(`click`,()=>{n()})}function d(){[`overview`,`devices`,`events`,`users`,`security`,`config`].forEach(e=>{let t=document.getElementById(`nav-${e}`);t&&t.addEventListener(`click`,t=>{t.preventDefault(),i!==e&&(i=e,u(),m())})})}async function p(){try{let e=await fetch(`/api/v1/dashboard`,{method:`GET`,headers:{Authorization:`Bearer ${t}`}});if(!e.ok)throw Error(`Failed to load dashboard statistics.`);a=await e.json()}catch(e){throw document.getElementById(`dashboard-content`).innerHTML=`
                 <div style="grid-column: span 2; text-align: center; color: var(--accent-danger); padding: 50px 0;">
                     ${e.message||`Failed to load telemetry.`}
                 </div>
-            `}}i()}console.log(`[ATLAS FRONTEND] index.js loaded`);var m={token:localStorage.getItem(`atlas_session_token`)||null,role:localStorage.getItem(`atlas_session_role`)||null};async function h(){if(console.log(`[ATLAS FRONTEND] checkSession started`),!m.token){console.log(`[ATLAS FRONTEND] no token, calling showLogin`),g();return}try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${m.token}`}});e.ok?_((await e.json()).role,m.token):(y(),g())}catch{y(),g()}}function g(){a((e,t)=>{localStorage.setItem(`atlas_session_token`,t),localStorage.setItem(`atlas_session_role`,e),m.token=t,m.role=e,_(e,t)})}function _(e,t){e.toUpperCase()===`ADMIN`?p(e,t,v):d(e,t,v)}async function v(){if(m.token)try{await fetch(`/api/v1/auth/logout`,{method:`POST`,headers:{Authorization:`Bearer ${m.token}`}})}catch(e){console.error(`Logout API request failed:`,e)}y(),g()}function y(){localStorage.removeItem(`atlas_session_token`),localStorage.removeItem(`atlas_session_role`),m.token=null,m.role=null}h();
+            `,e}}async function m(){let e=document.getElementById(`dashboard-content`);try{i===`overview`?(a||await p(),e.innerHTML=`
+                    <div class="grid-col">
+                        ${l(a.system_status,a.role)}
+                        <div style="margin-top: 25px;"></div>
+                        ${s(a.devices)}
+                    </div>
+                    <div class="grid-col">
+                        ${c(a.recent_events,a.alerts)}
+                    </div>
+                `):i===`users`?(e.innerHTML=`<div id="user-management-container" style="grid-column: span 2;"></div>`,f(`user-management-container`,t,()=>{})):i===`devices`?(a||await p(),e.innerHTML=`
+                    <div style="grid-column: span 2;">
+                        ${s(a.devices)}
+                    </div>
+                `):i===`events`?(a||await p(),e.innerHTML=`
+                    <div style="grid-column: span 2;">
+                        ${c(a.recent_events,a.alerts)}
+                    </div>
+                `):i===`security`?e.innerHTML=`
+                    <div class="glass-panel" style="grid-column: span 2; padding: 40px; text-align: center;">
+                        <i class="fas fa-shield-alt" style="font-size: 3em; color: var(--accent-color); margin-bottom: 20px;"></i>
+                        <h2 style="font-family: var(--font-heading); color: var(--text-primary); margin-top: 0;">Security Logs</h2>
+                        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 20px;">Live audit trails and security events are currently streaming to cold storage. Real-time view coming online in next update.</p>
+                        <button class="btn-secondary" onclick="alert('Querying logs... (Coming Soon)')"><i class="fas fa-search"></i> QUERY LOGS</button>
+                    </div>
+                `:i===`config`&&(e.innerHTML=`
+                    <div class="glass-panel" style="grid-column: span 2; padding: 40px; text-align: center;">
+                        <i class="fas fa-cogs" style="font-size: 3em; color: var(--accent-color); margin-bottom: 20px;"></i>
+                        <h2 style="font-family: var(--font-heading); color: var(--text-primary); margin-top: 0;">System Configuration</h2>
+                        <p style="color: var(--text-secondary); max-width: 600px; margin: 0 auto 20px;">Global system parameters, biometric thresholds, and API keys.</p>
+                        <div style="display: flex; justify-content: center; gap: 10px;">
+                            <button class="btn-secondary" disabled>BIOMETRICS CONFIG</button>
+                            <button class="btn-secondary" disabled>NETWORK CONFIG</button>
+                        </div>
+                    </div>
+                `)}catch{}}u(),m()}console.log(`[ATLAS FRONTEND] index.js loaded`);var m={token:localStorage.getItem(`atlas_session_token`)||null,role:localStorage.getItem(`atlas_session_role`)||null,accountId:localStorage.getItem(`atlas_session_account_id`)||null};async function h(){if(console.log(`[ATLAS FRONTEND] checkSession started`),!m.token){console.log(`[ATLAS FRONTEND] no token, calling showLogin`),g();return}try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${m.token}`}});if(e.ok){let t=await e.json();localStorage.setItem(`atlas_session_account_id`,t.account_id),m.accountId=t.account_id,_(t.role,m.token)}else y(),g()}catch{y(),g()}}function g(){a(async(e,t)=>{localStorage.setItem(`atlas_session_token`,t),localStorage.setItem(`atlas_session_role`,e),m.token=t,m.role=e;try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${t}`}});if(e.ok){let t=await e.json();localStorage.setItem(`atlas_session_account_id`,t.account_id),m.accountId=t.account_id}}catch(e){console.error(`Failed to fetch session after login`,e)}_(e,t)})}function _(e,t){e.toUpperCase()===`ADMIN`?p(e,t,v):d(e,t,v)}async function v(){if(m.token)try{await fetch(`/api/v1/auth/logout`,{method:`POST`,headers:{Authorization:`Bearer ${m.token}`}})}catch(e){console.error(`Logout API request failed:`,e)}y(),g()}function y(){localStorage.removeItem(`atlas_session_token`),localStorage.removeItem(`atlas_session_role`),localStorage.removeItem(`atlas_session_account_id`),m.token=null,m.role=null,m.accountId=null}h();

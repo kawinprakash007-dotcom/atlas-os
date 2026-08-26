@@ -7,7 +7,8 @@ console.log("[ATLAS FRONTEND] index.js loaded");
 // Keep active session in memory and sync with localStorage for persistence
 let activeSession = {
     token: localStorage.getItem("atlas_session_token") || null,
-    role: localStorage.getItem("atlas_session_role") || null
+    role: localStorage.getItem("atlas_session_role") || null,
+    accountId: localStorage.getItem("atlas_session_account_id") || null
 };
 
 export async function checkSession() {
@@ -27,6 +28,8 @@ export async function checkSession() {
         
         if (response.ok) {
             const data = await response.json();
+            localStorage.setItem("atlas_session_account_id", data.account_id);
+            activeSession.accountId = data.account_id;
             showDashboard(data.role, activeSession.token);
         } else {
             clearSession();
@@ -39,11 +42,26 @@ export async function checkSession() {
 }
 
 function showLogin() {
-    renderLoginPage((role, token) => {
+    renderLoginPage(async (role, token) => {
         localStorage.setItem("atlas_session_token", token);
         localStorage.setItem("atlas_session_role", role);
         activeSession.token = token;
         activeSession.role = role;
+        
+        // Fetch session data to get accountId
+        try {
+            const response = await fetch("/api/v1/auth/session", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem("atlas_session_account_id", data.account_id);
+                activeSession.accountId = data.account_id;
+            }
+        } catch (e) {
+            console.error("Failed to fetch session after login", e);
+        }
+        
         showDashboard(role, token);
     });
 }
@@ -76,9 +94,12 @@ async function handleLogout() {
 function clearSession() {
     localStorage.removeItem("atlas_session_token");
     localStorage.removeItem("atlas_session_role");
+    localStorage.removeItem("atlas_session_account_id");
     activeSession.token = null;
     activeSession.role = null;
+    activeSession.accountId = null;
 }
 
 // Start router
 checkSession();
+
