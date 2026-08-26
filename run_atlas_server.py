@@ -127,13 +127,56 @@ def main():
         else:
             reasoner = OrnithReasoner(model_name=model, host=args.ollama_host)
 
-    # 2. Configure Runtime
+    # 2. Configure Runtime, Device, Monitoring & Command Layers
     config = ATLASConfiguration()
-    # Let runtime use SQLiteMemoryStore with temp database or default
-    runtime = ATLASRuntime(primary_reasoner=reasoner, configuration=config)
     
-    # 3. Inject Runtime into FastAPI app
+    from atlas_core.devices.registry import DeviceRegistry
+    from atlas_core.devices.health import DeviceHealthManager
+    from atlas_core.monitoring.metrics import SystemMetrics
+    from atlas_core.monitoring.event_stream import EventStream
+    from atlas_core.commands.registry import CommandRegistry
+    from atlas_core.commands.dispatcher import DeviceCommandDispatcher
+    from atlas_core.commands.manager import DeviceCommandManager
+
+    device_registry = DeviceRegistry()
+    device_health_manager = DeviceHealthManager(
+        device_registry,
+        stale_threshold=config.device_stale_threshold,
+        offline_threshold=config.device_offline_threshold
+    )
+
+    system_metrics = SystemMetrics()
+    event_stream = EventStream(metrics=system_metrics)
+
+    command_registry = CommandRegistry(metrics=system_metrics)
+    command_dispatcher = DeviceCommandDispatcher()
+    command_manager = DeviceCommandManager(
+        device_registry=device_registry,
+        command_registry=command_registry,
+        command_dispatcher=command_dispatcher,
+        health_manager=device_health_manager
+    )
+
+    # Let runtime use SQLiteMemoryStore with temp database or default
+    runtime = ATLASRuntime(
+        primary_reasoner=reasoner, 
+        configuration=config,
+        device_registry=device_registry,
+        device_health_manager=device_health_manager,
+        command_registry=command_registry,
+        command_dispatcher=command_dispatcher,
+        command_manager=command_manager
+    )
+    
+    # 3. Inject into FastAPI app
     app.state.runtime = runtime
+    app.state.device_registry = device_registry
+    app.state.device_health_manager = device_health_manager
+    app.state.event_stream = event_stream
+    app.state.system_metrics = system_metrics
+    app.state.command_registry = command_registry
+    app.state.command_dispatcher = command_dispatcher
+    app.state.command_manager = command_manager
     
     print(f"Starting server on {args.host}:{args.port}...")
     uvicorn.run(app, host=args.host, port=args.port)

@@ -1,0 +1,184 @@
+{
+    "person_id": "ATLAS-P-88888888",
+    "model_name": "insightface_buffalo_l",
+    "embedding_dimension": 512,
+    "enrolled_template_count": 5,
+    "overall_status": "WARNING",
+    "recommended_threshold": 0.882,
+    "far_at_recommended": 0.0,
+    "frr_at_recommended": 0.6,
+    "eer_approximation": 0.06666666666666667,
+    "threshold_method": "Lowest threshold satisfying FAR = 0.0000 while minimizing FRR (FRR=0.6000)",
+    "scenarios": {
+        "genuine": {
+            "scenario": "AUTHORIZED PERSON",
+            "total_attempts": 15,
+            "accepted_samples": 15,
+            "rejected_samples": 0,
+            "min_similarity": 0.8120392073341707,
+            "max_similarity": 0.8938563165068447,
+            "mean_similarity": 0.8654321912808185,
+            "median_similarity": 0.875036500633559,
+            "standard_deviation": 0.024550808130574534,
+            "reason_counts": {
+                "ACCEPTED": 15
+            }
+        },
+        "impostor": {
+            "scenario": "IMPOSTOR PERSON",
+            "total_attempts": 15,
+            "accepted_samples": 15,
+            "rejected_samples": 0,
+            "min_similarity": -0.006822251102446834,
+            "max_similarity": 0.8817990987544693,
+            "mean_similarity": 0.06782050120532056,
+            "median_similarity": 0.013469303455460392,
+            "standard_deviation": 0.21783539741757413,
+            "reason_counts": {
+                "ACCEPTED": 15
+            }
+        },
+        "no_face": {
+            "scenario": "NO FACE",
+            "total_attempts": 1,
+            "accepted_samples": 1,
+            "rejected_samples": 0,
+            "min_similarity": 0.00684731145926951,
+            "max_similarity": 0.00684731145926951,
+            "mean_similarity": 0.00684731145926951,
+            "median_similarity": 0.00684731145926951,
+            "standard_deviation": 0.0,
+            "reason_counts": {
+                "ACCEPTED": 1
+            }
+        },
+        "multiple_faces": {
+            "scenario": "UNKNOWN",
+            "total_attempts": 0,
+            "accepted_samples": 0,
+            "rejected_samples": 0,
+            "min_similarity": 0.0,
+            "max_similarity": 0.0,
+            "mean_similarity": 0.0,
+            "median_similarity": 0.0,
+            "standard_deviation": 0.0,
+            "reason_counts": {}
+        },
+        "poses": {
+            "FRONT": {
+                "scenario": "POSE FRONT",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": -0.004436608537735487,
+                "max_similarity": 0.6457565165290493,
+                "mean_similarity": 0.13635348481721368,
+                "median_similarity": 0.012983146713824606,
+                "standard_deviation": 0.2548089432248183,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            },
+            "LEFT": {
+                "scenario": "POSE LEFT",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": -0.05552211770702573,
+                "max_similarity": 0.02761954013395386,
+                "mean_similarity": -0.00642783571908454,
+                "median_similarity": 0.008895853106262529,
+                "standard_deviation": 0.03176364480098312,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            },
+            "RIGHT": {
+                "scenario": "POSE RIGHT",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": -0.04219636318591656,
+                "max_similarity": 0.025865580078463155,
+                "mean_similarity": -0.0025183813196591304,
+                "median_similarity": 0.001697796819670517,
+                "standard_deviation": 0.02263215347358312,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            },
+            "UP": {
+                "scenario": "POSE UP",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": -0.011391129228422305,
+                "max_similarity": 0.013337099162298454,
+                "mean_similarity": -0.0010054149613842212,
+                "median_similarity": -0.003683148091406777,
+                "standard_deviation": 0.0096253851478409,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            },
+            "DOWN": {
+                "scenario": "POSE DOWN",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": -0.002697806629030231,
+                "max_similarity": 0.06081496845098557,
+                "mean_similarity": 0.03478563661710198,
+                "median_similarity": 0.03600884707522953,
+                "standard_deviation": 0.021593896870182424,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            }
+        },
+        "lighting": {
+            "NORMAL": {
+                "scenario": "LIGHTING NORMAL",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": 0.0064421566025029235,
+                "max_similarity": 0.0680322197175792,
+                "mean_similarity": 0.043455850568579285,
+                "median_similarity": 0.06050292880826909,
+                "standard_deviation": 0.024593639715307775,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            },
+            "BRIGHT": {
+                "scenario": "LIGHTING BRIGHT",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": 0.028476464127839263,
+                "max_similarity": 0.03936215648248498,
+                "mean_similarity": 0.032616310039891516,
+                "median_similarity": 0.029211094740277464,
+                "standard_deviation": 0.004550010617097862,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            },
+            "LOW LIGHT": {
+                "scenario": "LIGHTING LOW LIGHT",
+                "total_attempts": 5,
+                "accepted_samples": 5,
+                "rejected_samples": 0,
+                "min_similarity": 0.04645410892951805,
+                "max_similarity": 0.06256261644098118,
+                "mean_similarity": 0.055196717463448716,
+                "median_similarity": 0.05485128246350616,
+                "standard_deviation": 0.005258608323000387,
+                "reason_counts": {
+                    "ACCEPTED": 5
+                }
+            }
+        }
+    }
+}

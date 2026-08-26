@@ -4,6 +4,11 @@ import tempfile
 from typing import Dict, Any, Optional, Callable
 
 from atlas_core.runtime.configuration import ATLASConfiguration
+from atlas_core.devices.registry import DeviceRegistry
+from atlas_core.devices.health import DeviceHealthManager
+from atlas_core.commands.registry import CommandRegistry
+from atlas_core.commands.dispatcher import DeviceCommandDispatcher
+from atlas_core.commands.manager import DeviceCommandManager
 
 # World
 from atlas_core.world.state import WorldState
@@ -49,12 +54,35 @@ class ATLASRuntime:
         configuration: Optional[ATLASConfiguration] = None,
         world_state: Optional[WorldState] = None,
         event_history: Optional[EventHistory] = None,
-        memory_store: Optional[SQLiteMemoryStore] = None
+        memory_store: Optional[SQLiteMemoryStore] = None,
+        device_registry: Optional[DeviceRegistry] = None,
+        device_health_manager: Optional[DeviceHealthManager] = None,
+        command_registry: Optional[CommandRegistry] = None,
+        command_dispatcher: Optional[DeviceCommandDispatcher] = None,
+        command_manager: Optional[DeviceCommandManager] = None
     ):
         if primary_reasoner is None:
             raise ValueError("ATLASRuntime requires a primary_reasoner. No safe default reasoner exists.")
 
         self.configuration = configuration or ATLASConfiguration()
+        
+        # Device Layer (Single Source of Truth)
+        self.device_registry = device_registry or DeviceRegistry()
+        self.device_health_manager = device_health_manager or DeviceHealthManager(
+            self.device_registry,
+            stale_threshold=self.configuration.device_stale_threshold,
+            offline_threshold=self.configuration.device_offline_threshold
+        )
+        
+        # Command & Control Layer
+        self.command_registry = command_registry or CommandRegistry()
+        self.command_dispatcher = command_dispatcher or DeviceCommandDispatcher()
+        self.command_manager = command_manager or DeviceCommandManager(
+            device_registry=self.device_registry,
+            command_registry=self.command_registry,
+            command_dispatcher=self.command_dispatcher,
+            health_manager=self.device_health_manager
+        )
         
         # Core World State
         self.world_state = world_state or WorldState()
