@@ -3,6 +3,7 @@ import { renderDevicePanel } from "../components/device_panel.js";
 import { renderEventStream } from "../components/event_stream.js";
 import { renderSystemStatus } from "../components/system_status.js";
 import { renderUserManagement } from "../components/UserManagement.js";
+import { renderAssistantPanel } from "../components/AssistantPanel.js";
 
 export function renderAdminDashboard(role, sessionId, onLogout) {
     const appEl = document.getElementById("app");
@@ -135,4 +136,43 @@ export function renderAdminDashboard(role, sessionId, onLogout) {
     // Initialize
     updateSidebar();
     renderContent();
+    
+    // Add Assistant Panel
+    renderAssistantPanel(appEl, sessionId);
+
+    // Telemetry WebSocket
+    function connectTelemetryWs() {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/api/v1/ws/events`;
+        const telemetryWs = new WebSocket(wsUrl);
+
+        telemetryWs.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === "system_telemetry" && data.data) {
+                    const tData = data.data;
+                    const cpuEl = document.getElementById("telemetry-cpu");
+                    const ramEl = document.getElementById("telemetry-ram");
+                    const diskEl = document.getElementById("telemetry-disk");
+                    const ipEl = document.getElementById("telemetry-ip");
+                    const uptimeEl = document.getElementById("telemetry-uptime");
+
+                    if (cpuEl) cpuEl.innerText = `${tData.cpu.usage_percent.toFixed(1)}% (${tData.cpu.cores}C)`;
+                    if (ramEl) ramEl.innerText = `${tData.memory.available_gb.toFixed(1)} GB`;
+                    if (diskEl) diskEl.innerText = `${tData.disk.free_gb.toFixed(1)} GB`;
+                    if (ipEl) ipEl.innerText = `${tData.network.local_ip}`;
+                    
+                    if (uptimeEl) {
+                        const h = Math.floor(tData.os.uptime_seconds / 3600);
+                        const m = Math.floor((tData.os.uptime_seconds % 3600) / 60);
+                        uptimeEl.innerText = `${h}h ${m}m`;
+                    }
+                }
+            } catch(e) {}
+        };
+        telemetryWs.onclose = () => {
+            setTimeout(connectTelemetryWs, 5000);
+        };
+    }
+    connectTelemetryWs();
 }

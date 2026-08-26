@@ -3,6 +3,7 @@ import { renderDevicePanel } from "../components/device_panel.js";
 import { renderEventStream } from "../components/event_stream.js";
 import { renderSystemStatus } from "../components/system_status.js";
 import { renderBiometricEnrollment } from "../components/BiometricEnrollment.js";
+import { renderAssistantPanel } from "../components/AssistantPanel.js";
 
 export function renderUserDashboard(role, sessionId, onLogout) {
     const appEl = document.getElementById("app");
@@ -77,4 +78,7 @@ export function renderUserDashboard(role, sessionId, onLogout) {
     }
 
     loadDashboardData();
+    
+    // Add Assistant Panel
+    renderAssistantPanel(appEl, sessionId);
 }

@@ -69,6 +69,17 @@ async def create_user(body: AdminUserCreateRequest, request: Request):
             metadata={"new_account_id": acc.account_id, "new_role": acc.role},
         )
         
+        # Phase IM3: Synchronize new user to IdentityMemory
+        identity_memory = getattr(request.app.state, "identity_memory", None)
+        if identity_memory:
+            identity_memory.upsert_identity(
+                person_id=person.atlas_person_id,
+                display_name=person.display_name,
+                role=acc.role,
+                enabled=acc.enabled,
+                face_enrolled=False
+            )
+        
         return UnifiedUserResponse(
             account_id=acc.account_id,
             username=acc.username,
@@ -1046,6 +1057,18 @@ async def update_user(account_id: str, body: AdminUserUpdateRequest, request: Re
                 if s.account_id == account_id:
                     session_manager.revoke_session(s.session_id)
                     
+        # Phase IM3: Synchronize user edit to IdentityMemory
+        identity_memory = getattr(request.app.state, "identity_memory", None)
+        if identity_memory and person:
+            face_enrolled = (person.face_enrollment_status == "ENROLLED")
+            identity_memory.upsert_identity(
+                person_id=person.atlas_person_id,
+                display_name=body.display_name,
+                role=body.role,
+                enabled=body.enabled,
+                face_enrolled=face_enrolled
+            )
+                    
         return {"success": True, "message": "User updated"}
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
@@ -1097,6 +1120,12 @@ async def delete_user(account_id: str, request: Request):
         # Remove Account
         account_registry.remove_account(account_id)
         
+        # Phase IM3: Synchronize user deletion to IdentityMemory
+        if person:
+            identity_memory = getattr(request.app.state, "identity_memory", None)
+            if identity_memory:
+                identity_memory.remove_identity(person.atlas_person_id)
+        
         return {"success": True, "message": "User deleted"}
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
@@ -1129,6 +1158,11 @@ async def reset_biometrics(person_id: str, request: Request):
         _face_store.remove_templates(person_id)
         
         person_registry.update_person(person_id, face_enrollment_status="NOT_ENROLLED", template_count=0)
+        
+        # Phase IM3: Synchronize biometric reset to IdentityMemory
+        identity_memory = getattr(request.app.state, "identity_memory", None)
+        if identity_memory:
+            identity_memory.mark_face_removed(person_id)
         
         return {"success": True, "message": "Biometrics reset"}
     except Exception as e:

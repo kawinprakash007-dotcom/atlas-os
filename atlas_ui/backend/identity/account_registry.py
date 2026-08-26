@@ -5,8 +5,9 @@ from typing import Dict, List, Optional
 from atlas_ui.backend.models.account import Account
 
 class AccountRegistry:
-    def __init__(self):
+    def __init__(self, sqlite_store=None):
         self._accounts: Dict[str, Account] = {}
+        self._store = sqlite_store
 
     def create_account(
         self,
@@ -23,6 +24,11 @@ class AccountRegistry:
                 raise ValueError(f"Username '{username}' already exists.")
 
         account_id = str(uuid.uuid4())
+        
+        # Write to SQLite first
+        if self._store:
+            self._store.create_account(account_id, username, password_hash, password_salt, role, enabled)
+            
         acc = Account(
             account_id=account_id,
             username=username,
@@ -60,6 +66,17 @@ class AccountRegistry:
                 if existing.account_id != account_id and existing.username.lower() == new_username.lower():
                     raise ValueError(f"Username '{new_username}' already exists.")
 
+        # Determine fields for SQLite
+        upd_username = new_username or acc.username
+        upd_role = kwargs.get("role", acc.role)
+        upd_enabled = kwargs.get("enabled", acc.enabled)
+        upd_hash = kwargs.get("password_hash")
+        upd_salt = kwargs.get("password_salt")
+
+        # Write to SQLite first
+        if self._store:
+            self._store.update_account(account_id, upd_username, upd_role, upd_enabled, upd_hash, upd_salt)
+
         for k, v in kwargs.items():
             if hasattr(acc, k):
                 setattr(acc, k, v)
@@ -74,4 +91,8 @@ class AccountRegistry:
     def remove_account(self, account_id: str) -> None:
         if account_id not in self._accounts:
             raise KeyError(f"Account '{account_id}' does not exist.")
+            
+        if self._store:
+            self._store.delete_account(account_id)
+            
         self._accounts.pop(account_id)
