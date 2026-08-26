@@ -1,26 +1,26 @@
 export function renderSystemStatus(systemStatus, role) {
     return `
-        <div class="panel-card glass-panel">
-            <div class="card-title">System Status Overview</div>
+        <div class="panel-card glass-panel" style="position: relative;">
+            <div class="card-title">System Awareness Telemetry</div>
             <div class="status-item">
-                <span>Core Operating Status</span>
-                <span style="color: #39ff14; font-weight: bold;">${systemStatus}</span>
+                <span>CPU Usage</span>
+                <span id="telemetry-cpu" style="color: #39ff14; font-weight: bold;">--%</span>
             </div>
             <div class="status-item">
-                <span>ATLAS Reasoning Mode</span>
-                <span style="color: var(--accent-color); font-weight: bold;">AUTONOMOUS</span>
+                <span>Memory Available</span>
+                <span id="telemetry-ram" style="color: var(--accent-color); font-weight: bold;">-- GB</span>
             </div>
             <div class="status-item">
-                <span>Active Network Gateway</span>
-                <span style="color: #39ff14; font-weight: bold;">ONLINE</span>
+                <span>Disk Free</span>
+                <span id="telemetry-disk" style="color: #39ff14; font-weight: bold;">-- GB</span>
             </div>
             <div class="status-item">
-                <span>Biometric Profile Match</span>
-                <span style="color: var(--accent-color); font-weight: bold;">CONFIRMED</span>
+                <span>Network IP</span>
+                <span id="telemetry-ip" style="color: var(--accent-color); font-weight: bold;">--</span>
             </div>
             <div class="status-item">
-                <span>Session Clearance</span>
-                <span style="color: var(--accent-color); font-weight: bold; text-transform: uppercase;">${role}</span>
+                <span>System Uptime</span>
+                <span id="telemetry-uptime" style="color: var(--accent-color); font-weight: bold;">--</span>
             </div>
         </div>
     `;

@@ -204,27 +204,27 @@
             </div>
         </div>
     `}function l(e,t){return`
-        <div class="panel-card glass-panel">
-            <div class="card-title">System Status Overview</div>
+        <div class="panel-card glass-panel" style="position: relative;">
+            <div class="card-title">System Awareness Telemetry</div>
             <div class="status-item">
-                <span>Core Operating Status</span>
-                <span style="color: #39ff14; font-weight: bold;">${e}</span>
+                <span>CPU Usage</span>
+                <span id="telemetry-cpu" style="color: #39ff14; font-weight: bold;">--%</span>
             </div>
             <div class="status-item">
-                <span>ATLAS Reasoning Mode</span>
-                <span style="color: var(--accent-color); font-weight: bold;">AUTONOMOUS</span>
+                <span>Memory Available</span>
+                <span id="telemetry-ram" style="color: var(--accent-color); font-weight: bold;">-- GB</span>
             </div>
             <div class="status-item">
-                <span>Active Network Gateway</span>
-                <span style="color: #39ff14; font-weight: bold;">ONLINE</span>
+                <span>Disk Free</span>
+                <span id="telemetry-disk" style="color: #39ff14; font-weight: bold;">-- GB</span>
             </div>
             <div class="status-item">
-                <span>Biometric Profile Match</span>
-                <span style="color: var(--accent-color); font-weight: bold;">CONFIRMED</span>
+                <span>Network IP</span>
+                <span id="telemetry-ip" style="color: var(--accent-color); font-weight: bold;">--</span>
             </div>
             <div class="status-item">
-                <span>Session Clearance</span>
-                <span style="color: var(--accent-color); font-weight: bold; text-transform: uppercase;">${t}</span>
+                <span>System Uptime</span>
+                <span id="telemetry-uptime" style="color: var(--accent-color); font-weight: bold;">--</span>
             </div>
         </div>
     `}function u(t,n){let r=document.getElementById(t);if(!r)return;let i=`IDLE`,a=null,o=null,s=!1,c=()=>{s=!1,o&&=(o.getTracks().forEach(e=>e.stop()),null)},l=()=>{let e=``;i===`CHECKING_STATUS`||i===`IDLE`?e=`
@@ -266,7 +266,101 @@
                 <h3 style="margin-bottom: 15px; font-weight: 600;">Biometric Authentication</h3>
                 ${e}
             </div>
-        `;let t=document.getElementById(`btn-enroll-action`);t&&t.addEventListener(`click`,d);let n=document.getElementById(`btn-cancel-enroll`);n&&n.addEventListener(`click`,()=>{c(),u()})},u=async()=>{i=`CHECKING_STATUS`,l();try{let t=await e.getStatus(n);a=t,i=t.enrolled?`ENROLLED`:`NOT_ENROLLED`,l()}catch{i=`ERROR`,l(),document.getElementById(`enroll-error-msg`).innerText=`Failed to load biometric status.`}},d=async()=>{i=`ENROLLING`,l();let t=document.getElementById(`biometric-enroll-video`),r=document.getElementById(`biometric-enroll-canvas`),a=document.getElementById(`enroll-progress-display`),d=document.getElementById(`enroll-error-msg`);try{o=await navigator.mediaDevices.getUserMedia({video:!0,audio:!1}),t.srcObject=o,s=!0,t.onloadedmetadata=()=>{t.play(),f()}}catch{i=`ERROR`,l(),document.getElementById(`enroll-error-msg`).innerText=`Camera access denied or unavailable.`}let f=async()=>{if(!s)return;let o=r.getContext(`2d`);if(t.videoWidth>0&&t.videoHeight>0){r.width=t.videoHeight,r.height=t.videoWidth,o.clearRect(0,0,r.width,r.height),o.save(),o.translate(r.width/2,r.height/2),o.rotate(90*Math.PI/180),o.drawImage(t,-t.videoWidth/2,-t.videoHeight/2,t.videoWidth,t.videoHeight),o.restore();let s=r.toDataURL(`image/jpeg`,.8);try{let t=await e.enroll(n,s);if(t.success){c(),a.innerText=`Enrollment complete`,a.style.color=`#39ff14`,setTimeout(()=>u(),1500);return}if(t.error===`Collecting`)a.innerText=`Sample ${t.samples_captured} / ${t.samples_requested}`,t.reason?(d.innerText=t.reason,d.style.display=`block`):d.style.display=`none`;else{c(),i=`ERROR`,l();let e=t.message||t.reason||`Enrollment failed.`;t.reason===`CAMERA_BUSY`&&(e=`Another biometric operation is currently using the camera.`),document.getElementById(`enroll-error-msg`).innerText=e;return}}catch{}}s&&setTimeout(f,1e3)}};u()}function d(e,t,n){let r=document.getElementById(`app`);r.innerHTML=`
+        `;let t=document.getElementById(`btn-enroll-action`);t&&t.addEventListener(`click`,d);let n=document.getElementById(`btn-cancel-enroll`);n&&n.addEventListener(`click`,()=>{c(),u()})},u=async()=>{i=`CHECKING_STATUS`,l();try{let t=await e.getStatus(n);a=t,i=t.enrolled?`ENROLLED`:`NOT_ENROLLED`,l()}catch{i=`ERROR`,l(),document.getElementById(`enroll-error-msg`).innerText=`Failed to load biometric status.`}},d=async()=>{i=`ENROLLING`,l();let t=document.getElementById(`biometric-enroll-video`),r=document.getElementById(`biometric-enroll-canvas`),a=document.getElementById(`enroll-progress-display`),d=document.getElementById(`enroll-error-msg`);try{o=await navigator.mediaDevices.getUserMedia({video:!0,audio:!1}),t.srcObject=o,s=!0,t.onloadedmetadata=()=>{t.play(),f()}}catch{i=`ERROR`,l(),document.getElementById(`enroll-error-msg`).innerText=`Camera access denied or unavailable.`}let f=async()=>{if(!s)return;let o=r.getContext(`2d`);if(t.videoWidth>0&&t.videoHeight>0){r.width=t.videoHeight,r.height=t.videoWidth,o.clearRect(0,0,r.width,r.height),o.save(),o.translate(r.width/2,r.height/2),o.rotate(90*Math.PI/180),o.drawImage(t,-t.videoWidth/2,-t.videoHeight/2,t.videoWidth,t.videoHeight),o.restore();let s=r.toDataURL(`image/jpeg`,.8);try{let t=await e.enroll(n,s);if(t.success){c(),a.innerText=`Enrollment complete`,a.style.color=`#39ff14`,setTimeout(()=>u(),1500);return}if(t.error===`Collecting`)a.innerText=`Sample ${t.samples_captured} / ${t.samples_requested}`,t.reason?(d.innerText=t.reason,d.style.display=`block`):d.style.display=`none`;else{c(),i=`ERROR`,l();let e=t.message||t.reason||`Enrollment failed.`;t.reason===`CAMERA_BUSY`&&(e=`Another biometric operation is currently using the camera.`),document.getElementById(`enroll-error-msg`).innerText=e;return}}catch{}}s&&setTimeout(f,1e3)}};u()}function d(e,t){let n=document.createElement(`div`);n.id=`assistant-panel`,n.style.cssText=`
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 350px;
+        height: 500px;
+        background: rgba(15, 20, 25, 0.95);
+        border: 1px solid rgba(0, 255, 128, 0.3);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        backdrop-filter: blur(10px);
+        z-index: 9999;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    `;let r=document.createElement(`div`);r.style.cssText=`
+        padding: 15px;
+        background: rgba(0, 255, 128, 0.1);
+        border-bottom: 1px solid rgba(0, 255, 128, 0.2);
+        color: #00ff80;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    `,r.innerHTML=`
+        <span>ATLAS Assistant</span>
+        <span id="assistant-toggle" style="font-size: 1.2rem; cursor: pointer;">▼</span>
+    `;let i=document.createElement(`div`);i.id=`assistant-chat-container`,i.style.cssText=`
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        color: #eee;
+    `;let a=document.createElement(`div`);a.style.cssText=`
+        padding: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        gap: 10px;
+    `;let o=document.createElement(`input`);o.type=`text`,o.placeholder=`Ask ATLAS...`,o.style.cssText=`
+        flex: 1;
+        padding: 10px;
+        background: rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 6px;
+        color: white;
+        outline: none;
+    `;let s=document.createElement(`button`);s.innerHTML=`🎤`,s.style.cssText=`
+        padding: 10px;
+        background: rgba(0, 255, 128, 0.1);
+        border: 1px solid rgba(0, 255, 128, 0.3);
+        color: #00ff80;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;let c=document.createElement(`button`);c.innerText=`SEND`,c.style.cssText=`
+        padding: 10px 15px;
+        background: rgba(0, 255, 128, 0.2);
+        border: 1px solid #00ff80;
+        color: #00ff80;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+    `,a.appendChild(s),a.appendChild(o),a.appendChild(c),n.appendChild(r),n.appendChild(i),n.appendChild(a),e.appendChild(n);let l=!1;r.addEventListener(`click`,()=>{l=!l,n.style.transform=l?`translateY(calc(100% - 53px))`:`translateY(0)`,document.getElementById(`assistant-toggle`).innerText=l?`▲`:`▼`});let u=window.SpeechRecognition||window.webkitSpeechRecognition,d=null,f=`OFF`,p=!1,m=()=>{f===`OFF`?(s.style.background=`rgba(0, 255, 128, 0.1)`,s.style.borderColor=`rgba(0, 255, 128, 0.3)`,s.style.boxShadow=`none`,o.placeholder=`Ask ATLAS...`):f===`IDLE`?(s.style.background=`rgba(0, 150, 255, 0.2)`,s.style.borderColor=`#0096ff`,s.style.boxShadow=`none`,o.placeholder=`Waiting for 'ATLAS'...`):f===`LISTENING`?(s.style.background=`rgba(255, 0, 0, 0.2)`,s.style.borderColor=`red`,s.style.boxShadow=`0 0 10px red`,o.placeholder=`Listening...`):f===`PROCESSING`&&(s.style.background=`rgba(255, 165, 0, 0.2)`,s.style.borderColor=`orange`,s.style.boxShadow=`none`,o.placeholder=`Processing...`)};if(window.atlasSpeak=e=>{if(`speechSynthesis`in window){d&&f!==`OFF`&&d.stop();let t=f;f=`PROCESSING`,m();let n=new SpeechSynthesisUtterance(e);n.onend=()=>{if(t!==`OFF`){if(f=`IDLE`,m(),p)try{d.start()}catch{}}else f=`OFF`,m()},window.speechSynthesis.speak(n)}},u){d=new u,d.continuous=!0,d.interimResults=!1,d.onstart=()=>{(f===`OFF`||f===`PROCESSING`)&&(f=`IDLE`),m()},d.onresult=e=>{if(f===`OFF`||f===`PROCESSING`)return;let t=e.resultIndex,n=e.results[t][0].transcript.trim().toLowerCase();if(console.log(`[Voice] Transcript:`,n),f===`IDLE`){let e=[`atlas`,`hey atlas`,`okay atlas`,`ok atlas`],t=``;for(let r of e)if(n.includes(r)){t=r;break}if(t){let e=n.indexOf(t),r=n.substring(e+t.length).trim();r.length>0?(o.value=r,f=`PROCESSING`,m(),v()):(f=`LISTENING`,m())}}else f===`LISTENING`&&n.length>0&&(o.value=n,f=`PROCESSING`,m(),v())};let e=null;d.onerror=t=>{switch(console.error(`Speech recognition error:`,t.error),clearTimeout(e),t.error){case`not-allowed`:case`audio-capture`:case`service-not-allowed`:p=!1,f=`OFF`,h(`system`,`Microphone access denied or unavailable.`);break;case`network`:p&&(e=setTimeout(()=>{if(p&&f!==`OFF`&&f!==`PROCESSING`)try{d.start()}catch{}},2e3))}m()},d.onend=()=>{p&&f!==`OFF`&&f!==`PROCESSING`&&(clearTimeout(e),e=setTimeout(()=>{if(p&&f!==`OFF`&&f!==`PROCESSING`)try{d.start()}catch(e){console.error(`Failed to restart recognition`,e)}},500))}}else s.style.opacity=`0.5`,s.title=`Speech Recognition not supported in this browser.`;s.addEventListener(`click`,()=>{if(d){if(p)p=!1,f=`OFF`,d.stop();else{p=!0,f=`IDLE`;try{d.start()}catch{}}m()}});let h=(e,t)=>{let n=document.createElement(`div`),r=e===`user`;n.style.cssText=`
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 85%;
+            word-wrap: break-word;
+            align-self: ${r?`flex-end`:`flex-start`};
+            background: ${r?`rgba(0, 255, 128, 0.15)`:`rgba(255, 255, 255, 0.05)`};
+            border: 1px solid ${r?`rgba(0, 255, 128, 0.3)`:`rgba(255, 255, 255, 0.1)`};
+            color: ${r?`#00ff80`:`#ddd`};
+        `,n.innerText=t,i.appendChild(n),i.scrollTop=i.scrollHeight},g=null,_=()=>{let e=`${window.location.protocol===`https:`?`wss:`:`ws:`}//${window.location.host}/api/v1/ws/events`;g=new WebSocket(e),g.onopen=()=>{console.log(`[ATLAS Assistant] WebSocket connected.`)},g.onmessage=e=>{try{let t=JSON.parse(e.data);if(t.type===`agent_status`){if(t.status===`THINKING`)h(`assistant`,`...`);else if(t.status===`INTENT_DETECTED`){let e=i.querySelectorAll(`div`);e.length>0&&e[e.length-1].innerText===`...`&&(e[e.length-1].innerText=`[INTENT DETECTED: ${t.intent}]`)}else if(t.status===`EXECUTING`){let e=i.querySelectorAll(`div`);e.length>0&&e[e.length-1].innerText.includes(`[INTENT DETECTED`)&&(e[e.length-1].innerText=`[EXECUTING: ${t.message}]`)}else(t.status===`COMPLETED`||t.status===`FAILED`)&&console.log(`[ATLAS Assistant] Reasoning ${t.status} via WS`,t.result)}else t.type===`vision_event`?h(`system`,`[VISION EVENT] ${t.event_type}`):t.type===`system_alert`&&h(`system`,`[ALERT] ${t.message}`)}catch(e){console.error(`[ATLAS Assistant] Error parsing WS message:`,e)}},g.onclose=()=>{console.log(`[ATLAS Assistant] WebSocket disconnected. Reconnecting in 5s...`),setTimeout(_,5e3)}};_();let v=async()=>{let e=o.value.trim();if(e){o.value=``,h(`user`,e);try{let n=await fetch(`/api/v1/assistant/chat`,{method:`POST`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${t}`},body:JSON.stringify({message:e})}),r=await n.json();if(!n.ok){h(`assistant`,`Error: `+(r.error||`Failed to process request`));return}let a=i.querySelectorAll(`div`);if(a.length>0){let e=a[a.length-1].innerText;(e===`...`||e.includes(`[INTENT DETECTED`)||e.includes(`[EXECUTING`))&&i.removeChild(a[a.length-1])}let o=e=>(e||``).toString().replace(/&/g,`&amp;`).replace(/</g,`&lt;`).replace(/>/g,`&gt;`).replace(/"/g,`&quot;`).replace(/'/g,`&#039;`),s=``;if(r.status===`completed`?r.type===`conversation`?s+=`<div style="margin-bottom: 10px; color: #a5d6ff;">${o(r.message)}</div>`:(s+=`<div style="color: #00ff80; font-weight: bold; margin-bottom: 5px;">✓ ${r.intent||`ACTION COMPLETED`}</div>`,s+=`<div style="margin-bottom: 10px;">${o(r.message)}</div>`):r.status===`rejected`?(s+=`<div style="color: #ff4444; font-weight: bold; margin-bottom: 5px;">✗ ACTION REJECTED</div>`,s+=`<div>${o(r.message)}</div>`):r.status===`unsupported`?(s+=`<div style="color: #ffaa00; font-weight: bold; margin-bottom: 5px;">⚠ UNSUPPORTED</div>`,s+=`<div>${o(r.message)}</div>`):r.status===`failed`?(s+=`<div style="color: #ff4444; font-weight: bold; margin-bottom: 5px;">✗ ACTION FAILED</div>`,s+=`<div>${o(r.message)}</div>`):s+=`<div>${o(r.message||`Unknown response status.`)}</div>`,r.execution&&(r.execution.stdout||r.execution.stderr)){let e=`exec-`+Math.random().toString(36).substr(2,9),t=(r.execution.stdout||``)+(r.execution.stderr?`
+`+r.execution.stderr:``);s+=`
+                    <div style="margin-top: 10px; font-size: 0.9em;">
+                        <div style="cursor: pointer; color: #aaa; border-bottom: 1px solid #444; padding-bottom: 3px;" onclick="document.getElementById('${e}').style.display = document.getElementById('${e}').style.display === 'none' ? 'block' : 'none'">
+                            ▶ View technical output
+                        </div>
+                        <pre id="${e}" style="display: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; color: #ccc; margin-top: 5px;">${o(t)}</pre>
+                    </div>
+                `}let c=document.createElement(`div`);c.style.cssText=`
+                padding: 10px;
+                border-radius: 8px;
+                max-width: 85%;
+                word-wrap: break-word;
+                align-self: flex-start;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                color: #ddd;
+            `,c.innerHTML=s,i.appendChild(c),i.scrollTop=i.scrollHeight,window.atlasSpeak&&r.message&&window.atlasSpeak(r.message)}catch(e){let t=i.querySelectorAll(`div`);t.length>0&&t[t.length-1].innerText===`...`&&i.removeChild(t[t.length-1]),h(`assistant`,`Network Error: `+e.message)}}};c.addEventListener(`click`,v),o.addEventListener(`keypress`,e=>{e.key===`Enter`&&v()}),h(`assistant`,`ATLAS OS Assistant initialized. How can I help you?`)}function f(e,t,n){let r=document.getElementById(`app`);r.innerHTML=`
         <div class="dashboard-wrapper">
             ${o(e,`overview`)}
             <main class="dashboard-main">
@@ -298,7 +392,7 @@
                 <div style="grid-column: span 2; text-align: center; color: var(--accent-danger); padding: 50px 0;">
                     ${e.message||`Failed to load telemetry.`}
                 </div>
-            `}}i()}function f(t,n,r){let i=document.getElementById(t);if(!i)return;let a=[],o={searchQuery:``,roleFilter:`ALL`,statusFilter:`ALL`,bioFilter:`ALL`,onlineFilter:`ALL`,sortColumn:`username`,sortDirection:`asc`},s=async()=>{try{i.innerHTML=`<div style="text-align:center; padding:50px; color:var(--accent-color);">LOADING USER DATA...</div>`;let e=await fetch(`/api/v1/admin/users`,{headers:{Authorization:`Bearer ${n}`}});if(!e.ok)throw Error(`Failed to load users`);a=(await e.json()).users||[],p()}catch(e){i.innerHTML=`<div class="error-text">Failed to load user management: ${e.message}</div>`}},c=async(e,t)=>{try{(await fetch(`/api/v1/admin/users/${e}/status`,{method:`POST`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify({enabled:t})})).ok?await s():alert(`Failed to update status`)}catch(e){alert(e.message)}},l=t=>{let n=document.createElement(`div`);n.className=`biometric-modal-overlay`,n.innerHTML=`
+            `}}i(),d(r,t)}function p(t,n,r){let i=document.getElementById(t);if(!i)return;let a=[],o={searchQuery:``,roleFilter:`ALL`,statusFilter:`ALL`,bioFilter:`ALL`,onlineFilter:`ALL`,sortColumn:`username`,sortDirection:`asc`},s=async()=>{try{i.innerHTML=`<div style="text-align:center; padding:50px; color:var(--accent-color);">LOADING USER DATA...</div>`;let e=await fetch(`/api/v1/admin/users`,{headers:{Authorization:`Bearer ${n}`}});if(!e.ok)throw Error(`Failed to load users`);a=(await e.json()).users||[],p()}catch(e){i.innerHTML=`<div class="error-text">Failed to load user management: ${e.message}</div>`}},c=async(e,t)=>{try{(await fetch(`/api/v1/admin/users/${e}/status`,{method:`POST`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify({enabled:t})})).ok?await s():alert(`Failed to update status`)}catch(e){alert(e.message)}},l=t=>{let n=document.createElement(`div`);n.className=`biometric-modal-overlay`,n.innerHTML=`
             <div class="biometric-modal-content glass-panel" style="width: 500px; text-align: center;">
                 <h3 style="margin-bottom: 20px;">Biometric Enrollment</h3>
                 <div id="enroll-video-container" style="margin-bottom: 20px;">
@@ -695,7 +789,7 @@
                         </button>
                     </form>
                 </div>
-            `,document.body.appendChild(a),document.getElementById(`cp-form`).addEventListener(`submit`,async e=>{e.preventDefault();let t=document.getElementById(`cp-error`),r=document.getElementById(`cp-success`),i=document.getElementById(`cp-submit`);t.style.display=`none`,r.style.display=`none`;let o=document.getElementById(`cp-account-id`).value,c=document.getElementById(`cp-current-password`).value,l=document.getElementById(`cp-new-password`).value;if(l!==document.getElementById(`cp-confirm-password`).value){t.innerText=`New passwords do not match.`,t.style.display=`block`;return}if(l.length<8){t.innerText=`Password must be at least 8 characters.`,t.style.display=`block`;return}let u={new_password:l},d=localStorage.getItem(`atlas_session_account_id`);if(d===o){if(!c){t.innerText=`Current password is required to change your own password.`,t.style.display=`block`;return}u.current_password=c}i.disabled=!0,i.innerHTML=`<i class="fas fa-spinner fa-spin"></i> UPDATING...`;try{let e=await fetch(`/api/v1/admin/users/${o}/password`,{method:`PUT`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify(u)});if(!e.ok){let t=await e.json();throw Error(t.error||`Failed to update password`)}r.innerText=`Password updated successfully.`,r.style.display=`block`,document.getElementById(`cp-current-password`).value=``,document.getElementById(`cp-new-password`).value=``,document.getElementById(`cp-confirm-password`).value=``,setTimeout(()=>{a.style.display=`none`,d===o?window.location.reload():s()},1500)}catch(e){t.innerText=e.message,t.style.display=`block`}finally{i.disabled=!1,i.innerHTML=`<i class="fas fa-lock"></i> UPDATE PASSWORD`}})),setTimeout(()=>{a.style.opacity=`1`,a.querySelector(`.glass-panel`).style.transform=`translateY(0)`},10),document.getElementById(`cp-error`).style.display=`none`,document.getElementById(`cp-success`).style.display=`none`,document.getElementById(`cp-account-id`).value=e,document.getElementById(`cp-display`).value=`${r} (@${t})`,localStorage.getItem(`atlas_session_account_id`)===e?(document.getElementById(`cp-current-password-container`).style.display=`block`,document.getElementById(`cp-current-password`).required=!0):(document.getElementById(`cp-current-password-container`).style.display=`none`,document.getElementById(`cp-current-password`).required=!1),document.getElementById(`cp-current-password`).value=``,document.getElementById(`cp-new-password`).value=``,document.getElementById(`cp-confirm-password`).value=``,a.style.display=`flex`},window.confirmDeleteUser=(e,t)=>{confirm(`Are you SURE you want to permanently delete ${t}?\nThis action cannot be undone.`)&&fetch(`/api/v1/admin/users/${e}`,{method:`DELETE`,headers:{Authorization:`Bearer ${n}`}}).then(async e=>{let t=await e.json();e.ok?s():alert(`Error deleting user: `+(t.error||`Unknown`))}).catch(e=>alert(`Network error`))},window.confirmResetBiometrics=(e,t)=>{confirm(`Are you sure you want to reset biometrics for ${t}?`)&&fetch(`/api/v1/admin/people/${e}/reset-biometrics`,{method:`POST`,headers:{Authorization:`Bearer ${n}`}}).then(async e=>{let t=await e.json();e.ok?s():alert(`Error resetting biometrics: `+(t.error||`Unknown`))}).catch(e=>alert(`Network error`))},s()}function p(e,t,n){let r=document.getElementById(`app`),i=`overview`,a=null;r.innerHTML=`
+            `,document.body.appendChild(a),document.getElementById(`cp-form`).addEventListener(`submit`,async e=>{e.preventDefault();let t=document.getElementById(`cp-error`),r=document.getElementById(`cp-success`),i=document.getElementById(`cp-submit`);t.style.display=`none`,r.style.display=`none`;let o=document.getElementById(`cp-account-id`).value,c=document.getElementById(`cp-current-password`).value,l=document.getElementById(`cp-new-password`).value;if(l!==document.getElementById(`cp-confirm-password`).value){t.innerText=`New passwords do not match.`,t.style.display=`block`;return}if(l.length<8){t.innerText=`Password must be at least 8 characters.`,t.style.display=`block`;return}let u={new_password:l},d=localStorage.getItem(`atlas_session_account_id`);if(d===o){if(!c){t.innerText=`Current password is required to change your own password.`,t.style.display=`block`;return}u.current_password=c}i.disabled=!0,i.innerHTML=`<i class="fas fa-spinner fa-spin"></i> UPDATING...`;try{let e=await fetch(`/api/v1/admin/users/${o}/password`,{method:`PUT`,headers:{"Content-Type":`application/json`,Authorization:`Bearer ${n}`},body:JSON.stringify(u)});if(!e.ok){let t=await e.json();throw Error(t.error||`Failed to update password`)}r.innerText=`Password updated successfully.`,r.style.display=`block`,document.getElementById(`cp-current-password`).value=``,document.getElementById(`cp-new-password`).value=``,document.getElementById(`cp-confirm-password`).value=``,setTimeout(()=>{a.style.display=`none`,d===o?window.location.reload():s()},1500)}catch(e){t.innerText=e.message,t.style.display=`block`}finally{i.disabled=!1,i.innerHTML=`<i class="fas fa-lock"></i> UPDATE PASSWORD`}})),setTimeout(()=>{a.style.opacity=`1`,a.querySelector(`.glass-panel`).style.transform=`translateY(0)`},10),document.getElementById(`cp-error`).style.display=`none`,document.getElementById(`cp-success`).style.display=`none`,document.getElementById(`cp-account-id`).value=e,document.getElementById(`cp-display`).value=`${r} (@${t})`,localStorage.getItem(`atlas_session_account_id`)===e?(document.getElementById(`cp-current-password-container`).style.display=`block`,document.getElementById(`cp-current-password`).required=!0):(document.getElementById(`cp-current-password-container`).style.display=`none`,document.getElementById(`cp-current-password`).required=!1),document.getElementById(`cp-current-password`).value=``,document.getElementById(`cp-new-password`).value=``,document.getElementById(`cp-confirm-password`).value=``,a.style.display=`flex`},window.confirmDeleteUser=(e,t)=>{confirm(`Are you SURE you want to permanently delete ${t}?\nThis action cannot be undone.`)&&fetch(`/api/v1/admin/users/${e}`,{method:`DELETE`,headers:{Authorization:`Bearer ${n}`}}).then(async e=>{let t=await e.json();e.ok?s():alert(`Error deleting user: `+(t.error||`Unknown`))}).catch(e=>alert(`Network error`))},window.confirmResetBiometrics=(e,t)=>{confirm(`Are you sure you want to reset biometrics for ${t}?`)&&fetch(`/api/v1/admin/people/${e}/reset-biometrics`,{method:`POST`,headers:{Authorization:`Bearer ${n}`}}).then(async e=>{let t=await e.json();e.ok?s():alert(`Error resetting biometrics: `+(t.error||`Unknown`))}).catch(e=>alert(`Network error`))},s()}function m(e,t,n){let r=document.getElementById(`app`),i=`overview`,a=null;r.innerHTML=`
         <div class="dashboard-wrapper">
             <div id="sidebar-container"></div>
             <main class="dashboard-main">
@@ -712,11 +806,11 @@
                 </div>
             </main>
         </div>
-    `;function u(){document.getElementById(`sidebar-container`).innerHTML=o(e,i),d(),document.getElementById(`btn-logout`).addEventListener(`click`,()=>{n()})}function d(){[`overview`,`devices`,`events`,`users`,`security`,`config`].forEach(e=>{let t=document.getElementById(`nav-${e}`);t&&t.addEventListener(`click`,t=>{t.preventDefault(),i!==e&&(i=e,u(),m())})})}async function p(){try{let e=await fetch(`/api/v1/dashboard`,{method:`GET`,headers:{Authorization:`Bearer ${t}`}});if(!e.ok)throw Error(`Failed to load dashboard statistics.`);a=await e.json()}catch(e){throw document.getElementById(`dashboard-content`).innerHTML=`
+    `;function u(){document.getElementById(`sidebar-container`).innerHTML=o(e,i),f(),document.getElementById(`btn-logout`).addEventListener(`click`,()=>{n()})}function f(){[`overview`,`devices`,`events`,`users`,`security`,`config`].forEach(e=>{let t=document.getElementById(`nav-${e}`);t&&t.addEventListener(`click`,t=>{t.preventDefault(),i!==e&&(i=e,u(),h())})})}async function m(){try{let e=await fetch(`/api/v1/dashboard`,{method:`GET`,headers:{Authorization:`Bearer ${t}`}});if(!e.ok)throw Error(`Failed to load dashboard statistics.`);a=await e.json()}catch(e){throw document.getElementById(`dashboard-content`).innerHTML=`
                 <div style="grid-column: span 2; text-align: center; color: var(--accent-danger); padding: 50px 0;">
                     ${e.message||`Failed to load telemetry.`}
                 </div>
-            `,e}}async function m(){let e=document.getElementById(`dashboard-content`);try{i===`overview`?(a||await p(),e.innerHTML=`
+            `,e}}async function h(){let e=document.getElementById(`dashboard-content`);try{i===`overview`?(a||await m(),e.innerHTML=`
                     <div class="grid-col">
                         ${l(a.system_status,a.role)}
                         <div style="margin-top: 25px;"></div>
@@ -725,11 +819,11 @@
                     <div class="grid-col">
                         ${c(a.recent_events,a.alerts)}
                     </div>
-                `):i===`users`?(e.innerHTML=`<div id="user-management-container" style="grid-column: span 2;"></div>`,f(`user-management-container`,t,()=>{})):i===`devices`?(a||await p(),e.innerHTML=`
+                `):i===`users`?(e.innerHTML=`<div id="user-management-container" style="grid-column: span 2;"></div>`,p(`user-management-container`,t,()=>{})):i===`devices`?(a||await m(),e.innerHTML=`
                     <div style="grid-column: span 2;">
                         ${s(a.devices)}
                     </div>
-                `):i===`events`?(a||await p(),e.innerHTML=`
+                `):i===`events`?(a||await m(),e.innerHTML=`
                     <div style="grid-column: span 2;">
                         ${c(a.recent_events,a.alerts)}
                     </div>
@@ -750,4 +844,4 @@
                             <button class="btn-secondary" disabled>NETWORK CONFIG</button>
                         </div>
                     </div>
-                `)}catch{}}u(),m()}console.log(`[ATLAS FRONTEND] index.js loaded`);var m={token:localStorage.getItem(`atlas_session_token`)||null,role:localStorage.getItem(`atlas_session_role`)||null,accountId:localStorage.getItem(`atlas_session_account_id`)||null};async function h(){if(console.log(`[ATLAS FRONTEND] checkSession started`),!m.token){console.log(`[ATLAS FRONTEND] no token, calling showLogin`),g();return}try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${m.token}`}});if(e.ok){let t=await e.json();localStorage.setItem(`atlas_session_account_id`,t.account_id),m.accountId=t.account_id,_(t.role,m.token)}else y(),g()}catch{y(),g()}}function g(){a(async(e,t)=>{localStorage.setItem(`atlas_session_token`,t),localStorage.setItem(`atlas_session_role`,e),m.token=t,m.role=e;try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${t}`}});if(e.ok){let t=await e.json();localStorage.setItem(`atlas_session_account_id`,t.account_id),m.accountId=t.account_id}}catch(e){console.error(`Failed to fetch session after login`,e)}_(e,t)})}function _(e,t){e.toUpperCase()===`ADMIN`?p(e,t,v):d(e,t,v)}async function v(){if(m.token)try{await fetch(`/api/v1/auth/logout`,{method:`POST`,headers:{Authorization:`Bearer ${m.token}`}})}catch(e){console.error(`Logout API request failed:`,e)}y(),g()}function y(){localStorage.removeItem(`atlas_session_token`),localStorage.removeItem(`atlas_session_role`),localStorage.removeItem(`atlas_session_account_id`),m.token=null,m.role=null,m.accountId=null}h();
+                `)}catch{}}u(),h(),d(r,t);function g(){let e=`${window.location.protocol===`https:`?`wss:`:`ws:`}//${window.location.host}/api/v1/ws/events`,t=new WebSocket(e);t.onmessage=e=>{try{let t=JSON.parse(e.data);if(t.type===`system_telemetry`&&t.data){let e=t.data,n=document.getElementById(`telemetry-cpu`),r=document.getElementById(`telemetry-ram`),i=document.getElementById(`telemetry-disk`),a=document.getElementById(`telemetry-ip`),o=document.getElementById(`telemetry-uptime`);n&&(n.innerText=`${e.cpu.usage_percent.toFixed(1)}% (${e.cpu.cores}C)`),r&&(r.innerText=`${e.memory.available_gb.toFixed(1)} GB`),i&&(i.innerText=`${e.disk.free_gb.toFixed(1)} GB`),a&&(a.innerText=`${e.network.local_ip}`),o&&(o.innerText=`${Math.floor(e.os.uptime_seconds/3600)}h ${Math.floor(e.os.uptime_seconds%3600/60)}m`)}}catch{}},t.onclose=()=>{setTimeout(g,5e3)}}g()}console.log(`[ATLAS FRONTEND] index.js loaded`);var h={token:localStorage.getItem(`atlas_session_token`)||null,role:localStorage.getItem(`atlas_session_role`)||null,accountId:localStorage.getItem(`atlas_session_account_id`)||null};async function g(){if(console.log(`[ATLAS FRONTEND] checkSession started`),!h.token){console.log(`[ATLAS FRONTEND] no token, calling showLogin`),_();return}try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${h.token}`}});if(e.ok){let t=await e.json();localStorage.setItem(`atlas_session_account_id`,t.account_id),h.accountId=t.account_id,v(t.role,h.token)}else b(),_()}catch{b(),_()}}function _(){a(async(e,t)=>{localStorage.setItem(`atlas_session_token`,t),localStorage.setItem(`atlas_session_role`,e),h.token=t,h.role=e;try{let e=await fetch(`/api/v1/auth/session`,{headers:{Authorization:`Bearer ${t}`}});if(e.ok){let t=await e.json();localStorage.setItem(`atlas_session_account_id`,t.account_id),h.accountId=t.account_id}}catch(e){console.error(`Failed to fetch session after login`,e)}v(e,t)})}function v(e,t){e.toUpperCase()===`ADMIN`?m(e,t,y):f(e,t,y)}async function y(){if(h.token)try{await fetch(`/api/v1/auth/logout`,{method:`POST`,headers:{Authorization:`Bearer ${h.token}`}})}catch(e){console.error(`Logout API request failed:`,e)}b(),_()}function b(){localStorage.removeItem(`atlas_session_token`),localStorage.removeItem(`atlas_session_role`),localStorage.removeItem(`atlas_session_account_id`),h.token=null,h.role=null,h.accountId=null}g();

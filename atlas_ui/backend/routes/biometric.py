@@ -372,6 +372,12 @@ async def biometric_enroll(body: BiometricEnrollRequest, request: Request):
         f"templates={template_count} dim={dim}",
         flush=True,
     )
+    
+    # Phase IM3: Synchronize successful face enrollment to IdentityMemory
+    identity_memory = getattr(request.app.state, "identity_memory", None)
+    if identity_memory:
+        identity_memory.mark_face_enrolled(person_id)
+        
     return BiometricEnrollResponse(
         success=True,
         person_id=person_id,
