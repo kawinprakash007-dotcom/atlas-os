@@ -4,12 +4,14 @@ import { renderEventStream } from "../components/event_stream.js";
 import { renderSystemStatus } from "../components/system_status.js";
 import { renderUserManagement } from "../components/UserManagement.js";
 import { renderAssistantPanel } from "../components/AssistantPanel.js";
+import { renderVisionPanel } from "../components/VisionPanel.js";
 
 export function renderAdminDashboard(role, sessionId, onLogout) {
     const appEl = document.getElementById("app");
     
     let activeTab = "overview";
     let cachedDashboardData = null;
+    let visionCleanup = null;
     
     appEl.innerHTML = `
         <div class="dashboard-wrapper">
@@ -34,18 +36,26 @@ export function renderAdminDashboard(role, sessionId, onLogout) {
         document.getElementById("sidebar-container").innerHTML = renderSidebar(role, activeTab);
         attachSidebarListeners();
         document.getElementById("btn-logout").addEventListener("click", () => {
+            if (visionCleanup) {
+                try { visionCleanup(); } catch(e) {}
+                visionCleanup = null;
+            }
             onLogout();
         });
     }
 
     function attachSidebarListeners() {
-        const tabs = ["overview", "devices", "events", "users", "security", "config"];
+        const tabs = ["overview", "devices", "events", "users", "vision", "security", "config"];
         tabs.forEach(tab => {
             const el = document.getElementById(`nav-${tab}`);
             if (el) {
                 el.addEventListener("click", (e) => {
                     e.preventDefault();
                     if (activeTab !== tab) {
+                        if (visionCleanup) {
+                            try { visionCleanup(); } catch(e) {}
+                            visionCleanup = null;
+                        }
                         activeTab = tab;
                         updateSidebar();
                         renderContent();
@@ -127,6 +137,9 @@ export function renderAdminDashboard(role, sessionId, onLogout) {
                         </div>
                     </div>
                 `;
+            } else if (activeTab === "vision") {
+                contentEl.innerHTML = `<div id="vision-dashboard-container" style="grid-column: span 2;"></div>`;
+                visionCleanup = renderVisionPanel("vision-dashboard-container", sessionId);
             }
         } catch (e) {
             // error already displayed by fetchDashboardData
@@ -167,6 +180,8 @@ export function renderAdminDashboard(role, sessionId, onLogout) {
                         const m = Math.floor((tData.os.uptime_seconds % 3600) / 60);
                         uptimeEl.innerText = `${h}h ${m}m`;
                     }
+                } else if (data.type === "system_event" && data.data) {
+                    document.dispatchEvent(new CustomEvent("atlas-system-event", { detail: data.data }));
                 }
             } catch(e) {}
         };

@@ -23,6 +23,14 @@ class IdentityMemory:
     def __init__(self):
         self._lock = threading.RLock()
         self._cache: Dict[str, IdentityRecord] = {}
+        self.on_mutation_callbacks = []
+
+    def _trigger_mutations(self):
+        for cb in self.on_mutation_callbacks:
+            try:
+                cb()
+            except Exception as e:
+                print(f"[IdentityMemory] Mutation callback error: {e}")
 
     def bootstrap(self, account_registry, person_registry, face_template_store) -> None:
         """
@@ -65,6 +73,7 @@ class IdentityMemory:
                 enabled=enabled,
                 face_enrolled=face_enrolled
             )
+            self._trigger_mutations()
 
     def get_identity(self, person_id: str) -> Optional[IdentityRecord]:
         """
@@ -107,6 +116,7 @@ class IdentityMemory:
                 return False
             old_record = self._cache[person_id]
             self._cache[person_id] = replace(old_record, face_enrolled=True)
+            self._trigger_mutations()
             return True
 
     def mark_face_removed(self, person_id: str) -> bool:
@@ -119,6 +129,7 @@ class IdentityMemory:
                 return False
             old_record = self._cache[person_id]
             self._cache[person_id] = replace(old_record, face_enrolled=False)
+            self._trigger_mutations()
             return True
 
     def remove_identity(self, person_id: str) -> bool:
@@ -129,5 +140,6 @@ class IdentityMemory:
         with self._lock:
             if person_id in self._cache:
                 del self._cache[person_id]
+                self._trigger_mutations()
                 return True
             return False

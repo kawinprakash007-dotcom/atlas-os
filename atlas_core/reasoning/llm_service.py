@@ -47,7 +47,7 @@ class LLMService(BaseReasoner):
         self.timeout = float(
             os.environ.get(
                 "ATLAS_LLM_TIMEOUT",
-                "15"
+                "60"
             )
         )
 

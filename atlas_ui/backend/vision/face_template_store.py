@@ -44,7 +44,15 @@ class FaceTemplateStore:
 
         self.store_path = store_path
         self._data: Dict[str, Any] = {"version": 2, "people": {}}
+        self.on_mutation_callbacks = []
         self._load_store()
+
+    def _trigger_mutations(self):
+        for cb in self.on_mutation_callbacks:
+            try:
+                cb()
+            except Exception as e:
+                print(f"[FaceTemplateStore] Mutation callback error: {e}")
 
     # ------------------------------------------------------------------
     # I/O
@@ -142,6 +150,7 @@ class FaceTemplateStore:
         }
 
         self._save_store()
+        self._trigger_mutations()
         print(
             f"[TEMPLATE STORE] Saved {len(templates)} templates for '{person_id}' "
             f"(recognizer={recognizer}, dim={dim}).",
@@ -152,6 +161,7 @@ class FaceTemplateStore:
         if person_id in self._data["people"]:
             del self._data["people"][person_id]
             self._save_store()
+            self._trigger_mutations()
             print(f"[TEMPLATE STORE] Removed templates for '{person_id}'.", flush=True)
             return True
         return False

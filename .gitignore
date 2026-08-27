@@ -1,2 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
 
+# SQLite
+*.db-wal
+*.db-shm
+data/atlas.db
+
+# Model files (large, not committed)
 atlas_ui/backend/vision/models/face_recognition_model.onnx
+
+# Face templates (runtime data, not committed)
+atlas_ui/backend/data/face_templates.json
+
+# Pytest
+.pytest_cache/
+*.pytest_cache
+htmlcov/
+.coverage
+coverage.xml
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+atlas_ui/frontend/dist/
+
+# Env
+.env
+*.env

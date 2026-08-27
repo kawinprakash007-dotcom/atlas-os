@@ -36,13 +36,13 @@ class CommandReasoner(BaseReasoner):
         action_payload = None
 
         # 2. Intent Detection
-        if msg_lower in ["system info", "show system information", "what is my system status"]:
+        if re.search(r'\bsystem\s+(status|info|overview)\b|\beverything\s+running\b|\bstatus\b.*system', msg_lower):
             intent = "SYSTEM_INFO"
             action_payload = {"command": "systeminfo"}
-        elif msg_lower in ["show network information", "network status", "show my ip"]:
+        elif re.search(r'\bnetwork\s+(status|info)\b|\bshow\s+my\s+ip\b', msg_lower):
             intent = "NETWORK_INFO"
             action_payload = {"command": "ipconfig"}
-        elif msg_lower in ["list files", "show files"]:
+        elif re.search(r'\blist\s+(files|directory)\b|\bshow\s+files\b', msg_lower):
             intent = "DIRECTORY_LIST"
             action_payload = {"command": "dir"}
         elif msg_lower in ["say hello", "echo atlas online"]:
@@ -70,9 +70,9 @@ class CommandReasoner(BaseReasoner):
         # 3. Decision Construction
         if intent:
             return Decision(
-                situation_summary=f"User requested {intent}.",
+                situation_summary=f"User requested {intent} via secure interface.",
                 observations=[f"User message: {message}"],
-                inferences=[f"Detected intent {intent}."],
+                inferences=[f"Detected intent {intent} based on user message: {message}"],
                 risks=[],
                 recommended_actions=[{
                     "action_type": "OSCommandAction",

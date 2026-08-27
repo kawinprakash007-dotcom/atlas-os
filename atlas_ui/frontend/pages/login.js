@@ -87,7 +87,7 @@ export function renderLoginPage(onLoginSuccess) {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const username = document.getElementById("username").value;
+        const username = document.getElementById("username").value.trim();
         const password = document.getElementById("password").value;
 
         errMsg.style.display = "none";
@@ -133,7 +133,7 @@ export function renderLoginPage(onLoginSuccess) {
                             }
                         } catch (err) {
                             card.innerHTML = originalHtml;
-                            document.getElementById("error-message").innerText = err.message || "AUTHENTICATION FAILED";
+                            document.getElementById("error-message").innerText = mapLoginError(err);
                             document.getElementById("error-message").style.display = "block";
                             document.getElementById("btn-submit").disabled = false;
                         }
@@ -150,9 +150,20 @@ export function renderLoginPage(onLoginSuccess) {
                 throw new Error(data.message || "AUTHENTICATION FAILED");
             }
         } catch (err) {
-            errMsg.innerText = err.message || "AUTHENTICATION FAILED";
+            errMsg.innerText = mapLoginError(err);
             errMsg.style.display = "block";
             submitBtn.disabled = false;
         }
     });
+}
+
+function mapLoginError(err) {
+    const msg = err.message || "";
+    if (msg.includes("Failed to fetch") || msg.includes("NetworkError") || msg.includes("Failed to execute 'fetch'")) {
+        return "ATLAS OS backend unavailable";
+    }
+    if (msg.includes("HTTP 502") || msg.includes("HTTP 503") || msg.includes("HTTP 504")) {
+        return "ATLAS OS backend unavailable";
+    }
+    return msg || "AUTHENTICATION FAILED";
 }
