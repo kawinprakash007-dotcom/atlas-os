@@ -31,6 +31,11 @@ export function renderSidebar(role, activeTab = "overview") {
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a class="menu-link ${activeTab === 'vision' ? 'active' : ''}" id="nav-vision">
+                            ATLAS Vision Edge
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a class="menu-link ${activeTab === 'security' ? 'active' : ''}" id="nav-security">
                             Security Logs
                         </a>

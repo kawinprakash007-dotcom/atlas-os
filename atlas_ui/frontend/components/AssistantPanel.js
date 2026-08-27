@@ -385,6 +385,12 @@ export function renderAssistantPanel(container, token) {
             
             if (!res.ok) {
                 addMessage("assistant", "Error: " + (data.error || "Failed to process request"));
+                // Resume listening if we were processing a voice command
+                if (shouldListen) {
+                    voiceState = "IDLE";
+                    updateVoiceUI();
+                    try { recognition.start(); } catch(e){}
+                }
                 return;
             }
 
@@ -438,7 +444,7 @@ export function renderAssistantPanel(container, token) {
                         <div style="cursor: pointer; color: #aaa; border-bottom: 1px solid #444; padding-bottom: 3px;" onclick="document.getElementById('${uniqueId}').style.display = document.getElementById('${uniqueId}').style.display === 'none' ? 'block' : 'none'">
                             ▶ View technical output
                         </div>
-                        <pre id="${uniqueId}" style="display: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; color: #ccc; margin-top: 5px;">${escapeHtml(techOut)}</pre>
+                        <pre id="${uniqueId}" style="display: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; overflow-x: auto; font-family: monospace; color: #ccc; margin-top: 5px; white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(techOut)}</pre>
                     </div>
                 `;
             }
@@ -461,6 +467,13 @@ export function renderAssistantPanel(container, token) {
 
             if (window.atlasSpeak && data.message) {
                 window.atlasSpeak(data.message);
+            } else {
+                // Resume listening if we were processing a voice command
+                if (shouldListen) {
+                    voiceState = "IDLE";
+                    updateVoiceUI();
+                    try { recognition.start(); } catch(e){}
+                }
             }
 
         } catch (err) {
@@ -470,6 +483,13 @@ export function renderAssistantPanel(container, token) {
                 chatContainer.removeChild(msgs[msgs.length - 1]);
             }
             addMessage("assistant", "Network Error: " + err.message);
+            
+            // Resume listening if we were processing a voice command
+            if (shouldListen) {
+                voiceState = "IDLE";
+                updateVoiceUI();
+                try { recognition.start(); } catch(e){}
+            }
         }
     };
 

@@ -12,7 +12,23 @@ from atlas_ui.backend.schemas.admin import (
 )
 from atlas_ui.backend.identity.risk_calculator import RiskCalculator
 
+
+def get_session_id_from_request(request: Request) -> Optional[str]:
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.lower().startswith("bearer "):
+        parts = auth_header.split(" ")
+        if len(parts) == 2:
+            return parts[1]
+    x_sess = request.headers.get("x-session-id")
+    if x_sess:
+        return x_sess
+    cookie_sess = request.cookies.get("session_id")
+    if cookie_sess:
+        return cookie_sess
+    return None
+
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
 
 @router.post("/users", response_model=UnifiedUserResponse)
 async def create_user(body: AdminUserCreateRequest, request: Request):
@@ -23,11 +39,7 @@ async def create_user(body: AdminUserCreateRequest, request: Request):
     auth_audit = request.app.state.auth_audit
     
     # Need session to check role
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     session_manager = request.app.state.session_manager
     sess = session_manager.validate_session(sess_id) if sess_id else None
@@ -130,11 +142,7 @@ async def update_user_status(account_id: str, body: AdminUserStatusUpdateRequest
     account_registry = request.app.state.account_registry
     auth_audit = request.app.state.auth_audit
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     session_manager = request.app.state.session_manager
     sess = session_manager.validate_session(sess_id) if sess_id else None
@@ -162,10 +170,23 @@ async def update_user_status(account_id: str, body: AdminUserStatusUpdateRequest
                 if s.account_id == account_id:
                     session_manager.revoke_session(s.session_id)
                     
-        # Resolve target person for enriched logging
+        # Resolve target person for enriched logging and sync
         person_registry = request.app.state.person_registry
         target_person = person_registry.get_person_by_account(account_id)
         target_username = acc.username
+
+        # Phase IM3: Synchronize user status update to IdentityMemory
+        if target_person:
+            identity_memory = getattr(request.app.state, "identity_memory", None)
+            if identity_memory:
+                face_enrolled = (target_person.face_enrollment_status == "ENROLLED")
+                identity_memory.upsert_identity(
+                    person_id=target_person.atlas_person_id,
+                    display_name=target_person.display_name,
+                    role=acc.role,
+                    enabled=body.enabled,
+                    face_enrolled=face_enrolled
+                )
 
         auth_audit.log_attempt(
             event_type="ACCOUNT_ENABLED" if body.enabled else "ACCOUNT_DISABLED",
@@ -191,11 +212,7 @@ async def list_users(request: Request):
     person_registry = request.app.state.person_registry
     session_manager = request.app.state.session_manager
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     sess = session_manager.validate_session(sess_id) if sess_id else None
     if not sess:
@@ -290,11 +307,7 @@ async def get_user_activity(account_id: str, request: Request):
     auth_audit = request.app.state.auth_audit
     session_manager = request.app.state.session_manager
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     sess = session_manager.validate_session(sess_id) if sess_id else None
     if not sess:
@@ -314,11 +327,7 @@ async def revoke_session(session_id: str, request: Request):
     session_manager = request.app.state.session_manager
     auth_audit = request.app.state.auth_audit
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     sess = session_manager.validate_session(sess_id) if sess_id else None
     if not sess:
@@ -372,11 +381,7 @@ async def get_security_log(
     access_controller = request.app.state.access_controller
     session_manager = request.app.state.session_manager
 
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
 
     sess = session_manager.validate_session(sess_id) if sess_id else None
     if not sess:
@@ -1018,11 +1023,7 @@ async def update_user(account_id: str, body: AdminUserUpdateRequest, request: Re
     account_registry = request.app.state.account_registry
     person_registry = request.app.state.person_registry
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     session_manager = request.app.state.session_manager
     sess = session_manager.validate_session(sess_id) if sess_id else None
@@ -1080,11 +1081,7 @@ async def delete_user(account_id: str, request: Request):
     account_registry = request.app.state.account_registry
     person_registry = request.app.state.person_registry
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     session_manager = request.app.state.session_manager
     sess = session_manager.validate_session(sess_id) if sess_id else None
@@ -1136,11 +1133,7 @@ async def reset_biometrics(person_id: str, request: Request):
     access_controller = request.app.state.access_controller
     person_registry = request.app.state.person_registry
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     session_manager = request.app.state.session_manager
     sess = session_manager.validate_session(sess_id) if sess_id else None
@@ -1173,11 +1166,7 @@ async def change_password(account_id: str, body: AdminPasswordChangeRequest, req
     access_controller = request.app.state.access_controller
     account_registry = request.app.state.account_registry
     
-    sess_id = request.headers.get("Authorization")
-    if sess_id and sess_id.startswith("Bearer "):
-        sess_id = sess_id[7:]
-    else:
-        sess_id = request.headers.get("x-session-id") or request.cookies.get("session_id")
+    sess_id = get_session_id_from_request(request)
         
     session_manager = request.app.state.session_manager
     sess = session_manager.validate_session(sess_id) if sess_id else None
@@ -1225,3 +1214,448 @@ async def change_password(account_id: str, body: AdminPasswordChangeRequest, req
         return {"success": True, "message": "Password changed successfully."}
     except Exception as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
+
+@router.get("/vision/status")
+async def get_vision_status(request: Request):
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "VIEW_SYSTEM"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    # Sync worker state (legacy local edge - port 8002)
+    vision_sync_worker = getattr(request.app.state, "vision_sync_worker", None)
+    worker_state: dict = {"active": False}
+    if vision_sync_worker:
+        with vision_sync_worker.state.lock:
+            worker_state = {
+                "active": True,
+                "target": vision_sync_worker.target_url,
+                "identity_dirty": vision_sync_worker.state.identity_dirty,
+                "biometric_dirty": vision_sync_worker.state.biometric_dirty,
+                "identity_version": vision_sync_worker.state.identity_version,
+                "biometric_version": vision_sync_worker.state.biometric_version,
+                "retry_count": vision_sync_worker.state.retry_count,
+                "next_retry_at": vision_sync_worker.state.next_retry_at,
+            }
+
+    # Remote ATLAS Vision — query real confirmed API (10.9.96.13:8765)
+    remote_client = getattr(request.app.state, "remote_vision_client", None)
+    vision_block: dict = {"connection": "DISABLED"}
+
+    if remote_client and remote_client.enabled:
+        health_data = remote_client.get_health()
+        h_status = health_data.get("status", "")
+
+        if h_status in ("offline",) or health_data.get("error_type") in ("unreachable", "timeout"):
+            vision_block = {
+                "connection": "OFFLINE",
+                "base_url": remote_client.base_url,
+                "detail": health_data.get("detail", "Vision unreachable"),
+            }
+        elif h_status in ("error",):
+            vision_block = {
+                "connection": "UNAVAILABLE",
+                "base_url": remote_client.base_url,
+                "detail": health_data.get("detail", "Vision error"),
+            }
+        else:
+            status_data = remote_client.get_status()
+            vision_block = {
+                "connection": "ONLINE",
+                "base_url": remote_client.base_url,
+                "service": health_data.get("service", "ATLAS Vision"),
+                "version": health_data.get("version"),
+                "contract_version": health_data.get("contract_version"),
+                "camera_status": status_data.get("camera_status", health_data.get("camera", {}).get("status")),
+                "recognition_status": status_data.get("recognition_status"),
+                "active_tracks": status_data.get("active_tracks"),
+            }
+    elif remote_client and not remote_client.enabled:
+        vision_block = {"connection": "DISABLED", "detail": "ATLAS_VISION_ENABLED=false"}
+
+    return {
+        "sync_worker": worker_state,
+        "remote_vision": vision_block,
+    }
+
+
+@router.post("/vision/test_track")
+async def proxy_test_track(track_id: str, request: Request):
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if sess.role != "ADMIN":
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+        
+    import urllib.request, urllib.parse, json as _json, os as _os
+    _local_vision_url = _os.environ.get("ATLAS_LOCAL_VISION_URL", "http://127.0.0.1:8002")
+    try:
+        url = f"{_local_vision_url}/api/v1/vision/test_track?track_id={urllib.parse.quote(track_id)}"
+        req = urllib.request.Request(url, method="POST")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                return _json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"error": f"Failed to contact Vision Edge: {str(e)}"})
+
+@router.post("/vision/test_recognition")
+async def proxy_test_recognition(track_id: str, authoritative_id: str, request: Request):
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if sess.role != "ADMIN":
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+        
+    import urllib.request, urllib.parse, json as _json, os as _os
+    _local_vision_url = _os.environ.get("ATLAS_LOCAL_VISION_URL", "http://127.0.0.1:8002")
+    try:
+        url = f"{_local_vision_url}/api/v1/vision/test_recognition?track_id={urllib.parse.quote(track_id)}&authoritative_id={urllib.parse.quote(authoritative_id)}"
+        req = urllib.request.Request(url, method="POST")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                return _json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"error": f"Failed to contact Vision Edge: {str(e)}"})
+
+from fastapi.responses import Response
+
+@router.get("/vision/camera/status")
+async def proxy_camera_status(request: Request):
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    
+    import urllib.request, json as _json, os as _os
+    _local_vision_url = _os.environ.get("ATLAS_LOCAL_VISION_URL", "http://127.0.0.1:8002")
+    try:
+        req = urllib.request.Request(f"{_local_vision_url}/api/v1/vision/camera/status", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                return _json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"error": f"Failed to contact Vision Edge: {str(e)}"})
+
+@router.post("/vision/camera/start")
+async def proxy_camera_start(request: Request):
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if sess.role != "ADMIN":
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+        
+    import urllib.request, json as _json, os as _os
+    _local_vision_url = _os.environ.get("ATLAS_LOCAL_VISION_URL", "http://127.0.0.1:8002")
+    try:
+        req = urllib.request.Request(f"{_local_vision_url}/api/v1/vision/camera/start", method="POST")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                return _json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"error": f"Failed to contact Vision Edge: {str(e)}"})
+
+@router.post("/vision/camera/stop")
+async def proxy_camera_stop(request: Request):
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if sess.role != "ADMIN":
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+        
+    import urllib.request, json as _json, os as _os
+    _local_vision_url = _os.environ.get("ATLAS_LOCAL_VISION_URL", "http://127.0.0.1:8002")
+    try:
+        req = urllib.request.Request(f"{_local_vision_url}/api/v1/vision/camera/stop", method="POST")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                return _json.loads(res.read().decode('utf-8'))
+    except Exception as e:
+        return JSONResponse(status_code=502, content={"error": f"Failed to contact Vision Edge: {str(e)}"})
+
+@router.get("/vision/camera/frame")
+async def proxy_camera_frame(request: Request):
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+    if not sess:
+        return Response(status_code=401, content="Unauthorized session")
+        
+    import urllib.request, urllib.error, os as _os
+    _local_vision_url = _os.environ.get("ATLAS_LOCAL_VISION_URL", "http://127.0.0.1:8002")
+    try:
+        req = urllib.request.Request(f"{_local_vision_url}/api/v1/vision/camera/frame", method="GET")
+        with urllib.request.urlopen(req, timeout=5) as res:
+            if res.status == 200:
+                return Response(content=res.read(), media_type="image/jpeg")
+            else:
+                return Response(status_code=res.status, content="Failed to fetch frame from edge")
+    except urllib.error.HTTPError as e:
+        return Response(status_code=e.code, content=str(e))
+    except Exception as e:
+        return Response(status_code=502, content=f"Failed to contact Vision Edge: {str(e)}")
+
+
+# =============================================================================
+# REMOTE ATLAS VISION API GATEWAY
+# =============================================================================
+# These routes proxy browser requests to the remote ATLAS Vision machine
+# (10.9.96.13:8765). ATLAS OS performs server-to-server communication.
+# The browser NEVER contacts the Vision machine directly.
+# All routes require valid ATLAS OS authentication + MANAGE_USERS or VIEW_SYSTEM.
+# The ATLAS_VISION_INTEGRATION_TOKEN is never exposed to the frontend.
+# =============================================================================
+
+def _get_remote_vision_client(request):
+    """Retrieve the shared RemoteVisionClient from app state."""
+    return getattr(request.app.state, "remote_vision_client", None)
+
+def _vision_unavailable_response(detail: str = "ATLAS Vision is offline or not configured."):
+    """Standard 503 response when Vision is not reachable."""
+    return JSONResponse(
+        status_code=503,
+        content={
+            "vision_status": "VISION_UNAVAILABLE",
+            "detail": detail
+        }
+    )
+
+def _vision_disabled_response():
+    """Standard 503 response when Vision integration is disabled."""
+    return JSONResponse(
+        status_code=503,
+        content={
+            "vision_status": "VISION_DISABLED",
+            "detail": "Remote ATLAS Vision integration is disabled on this ATLAS OS instance."
+        }
+    )
+
+
+@router.get("/vision/remote/status")
+async def get_remote_vision_status(request: Request):
+    """
+    GET /api/v1/admin/vision/remote/status
+    Returns health/status of the remote ATLAS Vision machine.
+    Requires: authenticated session + VIEW_SYSTEM permission.
+    Response includes vision_status field: VISION_CONNECTED | VISION_OFFLINE | VISION_DISABLED.
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "VIEW_SYSTEM"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    result = client.get_health()
+    status_code = result.get("status", "")
+
+    if status_code == "offline" or result.get("error_type") == "unreachable":
+        vision_status = "VISION_OFFLINE"
+    elif status_code == "disabled":
+        vision_status = "VISION_DISABLED"
+    elif status_code == "error":
+        vision_status = "VISION_UNAVAILABLE"
+    else:
+        vision_status = "VISION_CONNECTED"
+
+    return {"vision_status": vision_status, "health": result}
+
+
+@router.get("/vision/remote/incidents")
+async def get_remote_vision_incidents(request: Request):
+    """
+    GET /api/v1/admin/vision/remote/incidents
+    Proxies incident list from remote ATLAS Vision.
+    Requires: authenticated session + VIEW_SYSTEM permission.
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "VIEW_SYSTEM"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    result = client.get_incidents()
+    if result.get("status") in ("offline", "error", "disabled"):
+        return _vision_unavailable_response(result.get("detail", str(result)))
+
+    return result
+
+
+@router.get("/vision/remote/incidents/recent")
+async def get_remote_vision_recent_incidents(request: Request):
+    """
+    GET /api/v1/admin/vision/remote/incidents/recent
+    Proxies recent incident list from remote ATLAS Vision.
+    Requires: authenticated session + VIEW_SYSTEM permission.
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "VIEW_SYSTEM"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    result = client.get_recent_incidents()
+    if result.get("status") in ("offline", "error", "disabled"):
+        return _vision_unavailable_response(result.get("detail", str(result)))
+
+    return result
+
+
+@router.get("/vision/remote/incidents/{incident_id}")
+async def get_remote_vision_incident_detail(incident_id: str, request: Request):
+    """
+    GET /api/v1/admin/vision/remote/incidents/{incident_id}
+    Proxies a single incident detail from remote ATLAS Vision.
+    Requires: authenticated session + VIEW_SYSTEM permission.
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "VIEW_SYSTEM"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    result = client.get_incident_details(incident_id)
+    if result.get("status") in ("offline", "error", "disabled"):
+        return _vision_unavailable_response(result.get("detail", str(result)))
+
+    return result
+
+
+@router.get("/vision/remote/alerts")
+async def get_remote_vision_alerts(request: Request):
+    """
+    GET /api/v1/admin/vision/remote/alerts
+    Proxies security alerts from remote ATLAS Vision.
+    Requires: authenticated session + VIEW_SYSTEM permission.
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if not access_controller.has_permission(sess.role, "VIEW_SYSTEM"):
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    result = client.get_security_alerts()
+    if result.get("status") in ("offline", "error", "disabled"):
+        return _vision_unavailable_response(result.get("detail", str(result)))
+
+    return result
+
+
+@router.post("/vision/remote/incidents/{incident_id}/acknowledge")
+async def acknowledge_remote_vision_incident(incident_id: str, request: Request):
+    """
+    POST /api/v1/admin/vision/remote/incidents/{incident_id}/acknowledge
+    Sends an acknowledge command to remote ATLAS Vision for the given incident.
+    Requires: authenticated session + ADMIN role.
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if sess.role != "ADMIN":
+        return JSONResponse(status_code=403, content={"error": "Forbidden: ADMIN role required"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    result = client.acknowledge_command(incident_id)
+    if result.get("status") in ("offline", "error", "disabled"):
+        return _vision_unavailable_response(result.get("detail", str(result)))
+
+    return result
+
+
+@router.post("/vision/remote/incidents/{incident_id}/resolve")
+async def resolve_remote_vision_incident(incident_id: str, request: Request):
+    """
+    POST /api/v1/admin/vision/remote/incidents/{incident_id}/resolve
+    Sends a resolve command to remote ATLAS Vision for the given incident.
+    Requires: authenticated session + ADMIN role.
+    Accepts optional JSON body: {"notes": "resolution notes here"}
+    """
+    access_controller = request.app.state.access_controller
+    sess_id = get_session_id_from_request(request)
+    session_manager = request.app.state.session_manager
+    sess = session_manager.validate_session(sess_id) if sess_id else None
+
+    if not sess:
+        return JSONResponse(status_code=401, content={"error": "Unauthorized session"})
+    if sess.role != "ADMIN":
+        return JSONResponse(status_code=403, content={"error": "Forbidden: ADMIN role required"})
+
+    client = _get_remote_vision_client(request)
+    if client is None or not client.enabled:
+        return _vision_disabled_response()
+
+    resolution_notes = ""
+    try:
+        body = await request.json()
+        resolution_notes = body.get("notes", "") if isinstance(body, dict) else ""
+    except Exception:
+        pass
+
+    result = client.resolve_command(incident_id, resolution_notes)
+    if result.get("status") in ("offline", "error", "disabled"):
+        return _vision_unavailable_response(result.get("detail", str(result)))
+
+    return result
